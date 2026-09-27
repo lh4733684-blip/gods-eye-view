@@ -1,0 +1,1113 @@
+<title>God's Eye Tokyo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500&family=Share+Tech+Mono&display=swap">
+<style>
+  /* Single dark console look, matching the app's own tokens (style.css: --bg-dark, --accent). */
+  :root {
+    color-scheme: dark;
+    --bg: #07090d;
+    --panel: #0c1016;
+    --panel-2: #10161e;
+    --line: #1c2632;
+    --line-2: #283544;
+    --text: #e3e7ea;
+    --muted: #7f8c98;
+    --dim: #53606c;
+    --accent: #00d4ff;
+    --japan: #ff4d5e;
+    --warn: #ffb800;
+    --ok: #3ddc97;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --font-hud: "Share Tech Mono", "JetBrains Mono", ui-monospace, monospace;
+    --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 12px/1.45 var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  * { box-sizing: border-box; }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+
+  .app {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    padding-inline: 16px;
+    padding-block: 10px;
+  }
+
+  /* ---------- header ---------- */
+  .bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px;
+    border-bottom: 1px solid var(--line); padding-bottom: 10px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 {
+    margin: 0; font: 20px/1 var(--font-hud); letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .brand h1 b { color: var(--japan); font-weight: 400; }
+  .brand span { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; }
+  .clocks { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; }
+  .clock { display: grid; gap: 1px; }
+  .clock small { color: var(--muted); font-size: 10px; letter-spacing: 0.12em; }
+  .clock output { font: 17px/1.1 var(--font-hud); letter-spacing: 0.04em; }
+  .clock.jst output { color: var(--text); }
+  .clock.sim output { color: var(--accent); }
+  .warp { display: flex; gap: 4px; align-items: center; }
+  .warp small { color: var(--muted); font-size: 10px; letter-spacing: 0.12em; margin-right: 4px; }
+
+  .btn {
+    background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 2px;
+    padding: 4px 8px; cursor: pointer; font-size: 11px; letter-spacing: 0.06em;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 18%, var(--panel-2)); border-color: var(--accent); color: var(--text); }
+  .btn kbd { color: var(--dim); font: inherit; margin-left: 4px; }
+
+  /* ---------- main grid ---------- */
+  .main {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr) 280px;
+    gap: 10px;
+  }
+  .panel {
+    min-height: 0; overflow: auto;
+    background: var(--panel); border: 1px solid var(--line);
+    display: flex; flex-direction: column;
+  }
+  .sec { padding: 12px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+  .sec:last-child { border-bottom: 0; }
+  .sec h2 {
+    margin: 0; font-size: 10px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted); display: flex; justify-content: space-between; gap: 8px;
+  }
+  .sec h2 em { font-style: normal; color: var(--dim); letter-spacing: 0.06em; text-transform: none; }
+  .note { margin: 0; font: 11.5px/1.5 var(--font-sans); color: var(--muted); max-width: 60ch; }
+  .note b { color: var(--text); font-weight: 500; }
+
+  /* Tokyo sun strip */
+  .sun { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .kv { display: grid; gap: 1px; }
+  .kv small { color: var(--dim); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .kv output { font-size: 13px; }
+  .daybar { position: relative; height: 18px; border: 1px solid var(--line-2); background: #05070a; overflow: hidden; }
+  .daybar i { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, #1b2a3a, #2e4a60 30%, #2e4a60 70%, #1b2a3a); }
+  .daybar s { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--japan); text-decoration: none; }
+  .daybar-scale { display: flex; justify-content: space-between; color: var(--dim); font-size: 9.5px; }
+
+  /* rosters */
+  .counts { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; padding: 1px 6px;
+    border: 1px solid var(--line-2); border-radius: 2px; font-size: 10.5px; color: var(--muted);
+  }
+  .chip i { width: 7px; height: 7px; display: inline-block; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: 400; color: var(--dim); font-size: 10px; letter-spacing: 0.08em; padding: 2px 4px 4px; border-bottom: 1px solid var(--line); }
+  td { padding: 3px 4px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); white-space: nowrap; }
+  td:first-child { overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  th.n, td.n { text-align: right; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: var(--panel-2); }
+  tr.sel td { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  td .dot { display: inline-block; width: 6px; height: 6px; margin-right: 6px; vertical-align: 1px; }
+  .jp td:first-child { color: var(--japan); }
+  .vis { color: var(--ok); }
+  .empty { color: var(--dim); font-size: 11px; padding: 4px 0; }
+
+  /* ---------- stage ---------- */
+  .stage { position: relative; min-height: 0; border: 1px solid var(--line); background: var(--bg); overflow: hidden; touch-action: none; }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+  .stage canvas.dragging { cursor: grabbing; }
+  .stage canvas.pointing { cursor: pointer; }
+  .fx { position: absolute; inset: 0; pointer-events: none; }
+  .stage[data-sensor="crt"] .fx { background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); }
+  .stage[data-sensor="nvg"] .fx { background: radial-gradient(ellipse at center, transparent 55%, rgba(0,12,0,0.85) 100%); }
+  .stage[data-sensor="flir"] .fx { background: radial-gradient(ellipse at center, transparent 70%, rgba(10,0,20,0.5) 100%); }
+  .corner { position: absolute; width: 18px; height: 18px; border-color: var(--accent); border-style: solid; opacity: 0.6; pointer-events: none; }
+  .corner.tl { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
+  .corner.tr { top: 8px; right: 8px; border-width: 1px 1px 0 0; }
+  .corner.bl { bottom: 8px; left: 8px; border-width: 0 0 1px 1px; }
+  .corner.br { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
+  .hud { position: absolute; font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em; pointer-events: none; line-height: 1.5; }
+  .hud b { color: var(--text); font-weight: 400; }
+  .hud.tl { top: 14px; left: 16px; }
+  .hud.tr { top: 14px; right: 16px; text-align: right; }
+  .hud.bl { bottom: 14px; left: 16px; }
+  .stage-ctl { position: absolute; bottom: 12px; right: 14px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .legend { display: grid; gap: 3px; background: color-mix(in srgb, var(--bg) 80%, transparent); padding: 6px 8px; border: 1px solid var(--line); pointer-events: none; }
+  .legend .ramp { display: flex; }
+  .legend .ramp span { width: 28px; height: 7px; }
+  .legend .ticks { display: flex; font-size: 9.5px; color: var(--muted); }
+  .legend .ticks span { width: 28px; }
+  .tip {
+    position: absolute; pointer-events: none; background: color-mix(in srgb, var(--panel) 94%, transparent);
+    border: 1px solid var(--line-2); padding: 5px 8px; font-size: 11px; white-space: nowrap; transform: translate(12px, 12px);
+  }
+  .tip small { color: var(--muted); display: block; }
+
+  /* ---------- right panel ---------- */
+  .target h3 { margin: 0; font: 16px/1.2 var(--font-hud); letter-spacing: 0.04em; text-wrap: balance; }
+  .target .sub { color: var(--muted); font-size: 11px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .layer { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 2px 0; }
+  .layer input { accent-color: var(--accent); margin: 0; }
+  .layer i { width: 8px; height: 8px; display: inline-block; flex: none; }
+  .layer span { flex: 1; }
+  .layer em { font-style: normal; color: var(--dim); }
+  .search { position: relative; }
+  .search input { width: 100%; background: var(--bg); border: 1px solid var(--line-2); padding: 6px 8px; border-radius: 2px; }
+  .results { list-style: none; margin: 4px 0 0; padding: 0; border: 1px solid var(--line-2); background: var(--panel-2); }
+  .results li { padding: 5px 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+  .results li:hover, .results li.on { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .results li small { color: var(--muted); }
+
+  .foot { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--dim); font: 10.5px/1.5 var(--font-sans); border-top: 1px solid var(--line); padding-top: 8px; }
+  .foot a { color: var(--muted); }
+  .warnline { color: var(--warn); }
+
+  @media (max-width: 1100px) {
+    .main { grid-template-columns: 260px minmax(0, 1fr); }
+    .main > .right { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  }
+  @media (max-width: 760px) {
+    html, body { height: auto; }
+    .app { height: auto; }
+    .main { grid-template-columns: minmax(0, 1fr); }
+    .stage { height: 64svh; min-height: 340px; order: -1; }
+    .main > .right { grid-column: auto; display: flex; }
+    .clocks { margin-left: 0; }
+    .panel { overflow: visible; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <h1>God's Eye <b>東京</b></h1>
+      <span>TOKYO · 35.68°N 139.77°E</span>
+    </div>
+    <div class="clocks">
+      <div class="clock jst"><small>TOKYO JST</small><output id="clkJst">--:--:--</output></div>
+      <div class="clock"><small>UTC</small><output id="clkUtc">--:--:--</output></div>
+      <div class="clock sim"><small id="simLabel">SIM · LIVE</small><output id="clkSim">--</output></div>
+      <div class="warp" role="group" aria-label="Time speed">
+        <small>TIME</small>
+        <button class="btn" id="w1" data-warp="1" aria-pressed="true">LIVE</button>
+        <button class="btn" data-warp="60" aria-pressed="false">×60</button>
+        <button class="btn" data-warp="600" aria-pressed="false">×600</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- LEFT: Tokyo's sky -->
+    <aside class="panel left" aria-label="Tokyo sky">
+      <section class="sec">
+        <h2>Sun over Tokyo <em id="sunState">—</em></h2>
+        <div class="sun">
+          <div class="kv"><small>Sunrise</small><output id="sunrise">--:--</output></div>
+          <div class="kv"><small>Sunset</small><output id="sunset">--:--</output></div>
+          <div class="kv"><small>Sun elev</small><output id="sunEl">--</output></div>
+        </div>
+        <div class="daybar" aria-hidden="true"><i id="dayFill"></i><s id="dayNow"></s></div>
+        <div class="daybar-scale"><span>00</span><span>06</span><span>12</span><span>18</span><span>24 JST</span></div>
+      </section>
+
+      <section class="sec">
+        <h2>Overhead Tokyo now <em id="ovhCount">—</em></h2>
+        <div class="counts" id="ovhChips"></div>
+        <table>
+          <thead><tr><th>Object</th><th class="n">El</th><th class="n">Az</th><th class="n">Range km</th></tr></thead>
+          <tbody id="ovhRows"></tbody>
+        </table>
+        <p class="note">Objects at least 10° above Tokyo's horizon. The table lists the ones that move across the sky, highest first; geostationary satellites are only counted, since they sit still over the equator to the south.</p>
+      </section>
+
+      <section class="sec">
+        <h2>Japan's satellites <em>from Tokyo</em></h2>
+        <table>
+          <thead><tr><th>Satellite</th><th class="n">El</th><th class="n">Az</th><th class="n">Lon</th></tr></thead>
+          <tbody id="jpRows"></tbody>
+        </table>
+        <p class="note"><b>Himawari</b> is the weather satellite behind every JMA cloud image. <b>Michibiki (QZS)</b> augments GPS for Japan; QZS-1R, 2 and 4 fly a figure-eight that loops over Japan, QZS-3 is geostationary.</p>
+      </section>
+
+      <section class="sec">
+        <h2>Next station passes <em>48 h · ≥10°</em></h2>
+        <table>
+          <thead><tr><th>Station</th><th>Start JST</th><th class="n">Max</th><th class="n">Min</th><th>Sky</th></tr></thead>
+          <tbody id="passRows"></tbody>
+        </table>
+        <p class="note warnline" id="passWarn"></p>
+      </section>
+    </aside>
+
+    <!-- CENTER: globe -->
+    <section class="stage" id="stage" data-sensor="normal" aria-label="Globe. Drag to rotate, scroll or pinch to zoom, click an object to select it.">
+      <canvas id="globe"></canvas>
+      <div class="fx"></div>
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div class="hud tl" id="hudTl"></div>
+      <div class="hud tr" id="hudTr"></div>
+      <div class="hud bl"><div class="legend" id="legend" hidden></div></div>
+      <div class="stage-ctl">
+        <button class="btn" id="btnTokyo">TOKYO <kbd>T</kbd></button>
+        <button class="btn" id="btnFollow" aria-pressed="false">FOLLOW <kbd>F</kbd></button>
+        <button class="btn" id="btnAlt" aria-pressed="false">TRUE ALTITUDE <kbd>A</kbd></button>
+      </div>
+      <div class="tip" id="tip" hidden></div>
+    </section>
+
+    <!-- RIGHT: target, search, layers -->
+    <aside class="panel right" aria-label="Selection and layers">
+      <section class="sec target" id="target"></section>
+
+      <section class="sec">
+        <h2>Find</h2>
+        <div class="search">
+          <input id="q" type="search" placeholder="ISS, Himawari, HND, Narita…" autocomplete="off" aria-label="Search satellites and airports">
+          <ul class="results" id="results" hidden></ul>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Sensor</h2>
+        <div class="row" id="sensors"></div>
+      </section>
+
+      <section class="sec">
+        <h2>Layers</h2>
+        <div id="layers"></div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="foot" id="foot"></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/satellite.js@6.0.2/dist/satellite.min.js"></script>
+<script>
+(() => {
+'use strict';
+const D = /*__GEV_DATA__*/null;
+const $ = (id) => document.getElementById(id);
+if (!D || !window.d3 || !window.topojson || !window.satellite) {
+  $('hudTl').textContent = 'Could not load the map libraries. Reload the page to try again.';
+  return;
+}
+const sat = window.satellite;
+const RAD = Math.PI / 180, DEG = 180 / Math.PI, RE = 6378.137;
+
+/* ------------------------------------------------------------------ constants */
+const TOKYO = { name: 'Tokyo · Marunouchi', lat: 35.6812, lon: 139.7671, hKm: 0.04 };
+const JAPAN_RX = /HIMAWARI|QZS|MICHIBIKI|JCSAT|BSAT|SUPERBIRD/i;
+const STATION_IDS = { '25544': 'ISS', '48274': 'Tiangong (CSS)' };
+
+const GROUPS = {
+  stations: { label: 'Space stations', on: true },
+  visual:   { label: 'Bright LEO (visual)', on: true },
+  gps:      { label: 'GPS', on: true },
+  galileo:  { label: 'Galileo', on: false },
+  glonass:  { label: 'GLONASS', on: false },
+  geo:      { label: 'Geostationary', on: true },
+};
+
+// Each sensor restyles the whole globe. Normal follows the app's own cyan HUD;
+// the others echo src/styles (NVG, FLIR ironbow, CRT phosphor).
+const SENSORS = {
+  normal: {
+    label: 'NORMAL', accent: '#00d4ff', japan: '#ff4d5e',
+    bg: '#07090d', ocean: '#0a1520', rim: 'rgba(0,212,255,0.22)', land: '#1a2a38', coast: 'rgba(130,190,225,0.38)',
+    grat: 'rgba(120,180,220,0.07)', night: 'rgba(1,3,7,0.42)', airport: 'rgba(227,231,234,0.6)', ink: '#c9d2da',
+    sats: { stations: '#00d4ff', visual: '#9fb0bf', gps: '#ffb800', galileo: '#8fb3ff', glonass: '#ff8a5c', geo: '#c792ff' },
+    ramp: ['#16303f', '#24556b', '#5f7b63', '#c29a3c', '#e2672d', '#ff2d2d'],
+  },
+  nvg: {
+    label: 'NVG', accent: '#a6ff8f', japan: '#e8ffd9',
+    bg: '#010501', ocean: '#021004', rim: 'rgba(120,255,110,0.25)', land: '#0f3312', coast: 'rgba(150,255,130,0.45)',
+    grat: 'rgba(120,255,110,0.08)', night: 'rgba(0,4,0,0.5)', airport: 'rgba(170,255,150,0.7)', ink: '#b9ffa8',
+    sats: { stations: '#e8ffd9', visual: '#6fd35f', gps: '#a6ff8f', galileo: '#86e675', glonass: '#86e675', geo: '#c7ffb8' },
+    ramp: ['#08250b', '#0f4214', '#1d6a22', '#3c9e3a', '#77d465', '#caffb8'],
+  },
+  flir: {
+    label: 'FLIR', accent: '#ffd23f', japan: '#ffffff',
+    bg: '#07000f', ocean: '#12002a', rim: 'rgba(255,120,60,0.25)', land: '#6a1471', coast: 'rgba(255,170,90,0.5)',
+    grat: 'rgba(255,140,80,0.07)', night: 'rgba(10,0,30,0.55)', airport: 'rgba(255,230,160,0.8)', ink: '#ffe9b0',
+    sats: { stations: '#ffffff', visual: '#ffb347', gps: '#ffd23f', galileo: '#ff8a3d', glonass: '#ff8a3d', geo: '#fff1c1' },
+    ramp: ['#2a0654', '#6a1471', '#b1245a', '#e3541b', '#ffa928', '#fff6d0'],
+  },
+  crt: {
+    label: 'CRT', accent: '#ffb000', japan: '#fff0c8',
+    bg: '#0a0600', ocean: '#120b00', rim: 'rgba(255,176,0,0.25)', land: '#3a2400', coast: 'rgba(255,190,60,0.55)',
+    grat: 'rgba(255,176,0,0.08)', night: 'rgba(4,2,0,0.5)', airport: 'rgba(255,200,90,0.75)', ink: '#ffd27a',
+    sats: { stations: '#fff0c8', visual: '#c98a00', gps: '#ffb000', galileo: '#e0a000', glonass: '#e0a000', geo: '#ffd27a' },
+    ramp: ['#2a1a00', '#4d3000', '#7a4c00', '#b07000', '#e09a10', '#ffd27a'],
+  },
+};
+const RATE_BINS = [1, 2.5, 5, 10, 20]; // homicides per 100k, log-ish steps
+
+/* ------------------------------------------------------------------ state */
+const state = {
+  sensor: 'normal',
+  layers: { airports: true, homicide: false, night: true, graticule: true },
+  trueAlt: false,
+  follow: false,
+  zoom: 2.6,
+  warp: 1, simBase: Date.now(), realBase: performance.now(),
+  target: null,       // { kind: 'sat'|'airport'|'country'|'site', ref }
+  hover: null,
+};
+try { const s = localStorage.getItem('gev-tokyo-sensor'); if (s && SENSORS[s]) state.sensor = s; } catch {}
+const simNow = () => state.simBase + (performance.now() - state.realBase) * state.warp;
+
+/* ------------------------------------------------------------------ data prep */
+const land = topojson.feature(D.land, D.land.objects.land);
+const countries = D.countries.map(([iso, name, rate, year, rings]) => {
+  // Outlines come from a flat-map compiler; make each ring a d3 spherical polygon
+  // with the right winding (area < hemisphere).
+  const polys = rings.map((ring) => {
+    const poly = { type: 'Polygon', coordinates: [ring] };
+    if (d3.geoArea(poly) > 2 * Math.PI) poly.coordinates = [ring.slice().reverse()];
+    return poly.coordinates;
+  });
+  return { type: 'Feature', properties: { iso, name, rate, year }, geometry: { type: 'MultiPolygon', coordinates: polys } };
+});
+const rankedRates = countries.map((c) => c.properties.rate).sort((a, b) => a - b);
+
+const airports = D.airports.map(([code, icao, name, city, country, lat, lon, elevFt, longestFt, rwys, large]) =>
+  ({ code, icao, name, city, country, lat, lon, elevFt, longestFt, rwys, large: !!large,
+     distTokyo: d3.geoDistance([lon, lat], [TOKYO.lon, TOKYO.lat]) * 6371 }));
+
+const sats = [];
+for (const [name, l1, l2, group] of D.tle) {
+  let rec;
+  try { rec = sat.twoline2satrec(l1, l2); } catch { continue; }
+  if (!rec || rec.error) continue;
+  const norad = l1.slice(2, 7).trim();
+  const jd = rec.jdsatepoch + (rec.jdsatepochF || 0);
+  sats.push({
+    name, norad, group, rec,
+    display: STATION_IDS[norad] || name,
+    japan: JAPAN_RX.test(name),
+    epochMs: (jd - 2440587.5) * 864e5,
+    periodMin: (2 * Math.PI) / rec.no,
+    incl: rec.inclo * DEG,
+    ok: false, lon: 0, lat: 0, alt: 0, speed: 0, pos: null,
+  });
+}
+const byNorad = new Map(sats.map((s) => [s.norad, s]));
+const stations = Object.keys(STATION_IDS).map((id) => byNorad.get(id)).filter(Boolean);
+const japanSats = sats.filter((s) => s.japan);
+const newestEpoch = Math.max(...sats.map((s) => s.epochMs));
+
+/* ------------------------------------------------------------------ astro helpers */
+function sunAt(ms) {
+  // Low-precision solar position (Astronomical Almanac), good to ~0.01°.
+  const d = (ms - 946728000000) / 864e5;
+  const g = (357.529 + 0.98560028 * d) * RAD;
+  const q = 280.459 + 0.98564736 * d;
+  const L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * RAD;
+  const e = (23.439 - 0.00000036 * d) * RAD;
+  const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L));
+  const dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const gmst = sat.gstime(new Date(ms));
+  let lon = (ra - gmst) * DEG;
+  lon = ((lon + 540) % 360) - 180;
+  return { lat: dec * DEG, lon, eci: [Math.cos(dec) * Math.cos(ra), Math.cos(dec) * Math.sin(ra), Math.sin(dec)] };
+}
+function sunElevation(sun, lat, lon) {
+  const H = (lon - sun.lon) * RAD;
+  return Math.asin(Math.sin(lat * RAD) * Math.sin(sun.lat * RAD) + Math.cos(lat * RAD) * Math.cos(sun.lat * RAD) * Math.cos(H)) * DEG;
+}
+function sunlit(pos, sunEci) {
+  const d = pos.x * sunEci[0] + pos.y * sunEci[1] + pos.z * sunEci[2];
+  if (d > 0) return true;
+  const px = pos.x - d * sunEci[0], py = pos.y - d * sunEci[1], pz = pos.z - d * sunEci[2];
+  return Math.hypot(px, py, pz) > RE;
+}
+function propagate(s, date) {
+  let pv;
+  try { pv = sat.propagate(s.rec, date); } catch { return null; }
+  if (!pv || !pv.position || typeof pv.position !== 'object' || Number.isNaN(pv.position.x)) return null;
+  return pv;
+}
+const tokyoGd = { longitude: TOKYO.lon * RAD, latitude: TOKYO.lat * RAD, height: TOKYO.hKm };
+function lookFrom(obsGd, pos, gmst) {
+  const la = sat.ecfToLookAngles(obsGd, sat.eciToEcf(pos, gmst));
+  return { el: la.elevation * DEG, az: ((la.azimuth * DEG) + 360) % 360, range: la.rangeSat };
+}
+
+/* ------------------------------------------------------------------ formatting */
+const fmtJst = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+const fmtJstHm = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false });
+const fmtJstDay = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tokyo', weekday: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+const fmtJstDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'short', day: '2-digit' });
+const fmtUtc = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+const ll = (lat, lon) => `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lon).toFixed(2)}°${lon >= 0 ? 'E' : 'W'}`;
+const compass = (az) => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(az / 45) % 8];
+const num = (n, d = 0) => Number(n).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const daysOld = (ms) => (simNow() - ms) / 864e5;
+
+/* ------------------------------------------------------------------ canvas */
+const stage = $('stage'), canvas = $('globe'), ctx = canvas.getContext('2d');
+const projection = d3.geoOrthographic().clipAngle(90).precision(0.4).rotate([-TOKYO.lon, -TOKYO.lat * 0.75]);
+const path = d3.geoPath(projection, ctx);
+const graticule = d3.geoGraticule10();
+const sphere = { type: 'Sphere' };
+let W = 0, H = 0, dpr = 1;
+function resize() {
+  const r = stage.getBoundingClientRect();
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = r.width; H = r.height;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  applyScale();
+}
+function applyScale() {
+  projection.translate([W / 2, H / 2]).scale(Math.min(W, H) * 0.42 * state.zoom);
+}
+new ResizeObserver(resize).observe(stage);
+
+// Orthographic point math (same as d3.geoOrthographic) with depth, so objects at
+// altitude can sit off the disc and be hidden behind the Earth correctly.
+let rotF = d3.geoRotation(projection.rotate());
+function screen(lon, lat, altKm = 0) {
+  const [l, p] = rotF([lon, lat]);
+  const cl = Math.cos(p * RAD);
+  const z = cl * Math.cos(l * RAD);
+  const k = state.trueAlt ? (6371 + altKm) / 6371 : 1;
+  const R = projection.scale();
+  const x = W / 2 + R * k * cl * Math.sin(l * RAD);
+  const y = H / 2 - R * k * Math.sin(p * RAD);
+  const visible = z > 0 || (k > 1 && k * Math.sqrt(Math.max(0, 1 - z * z)) > 1);
+  return { x, y, visible };
+}
+
+/* ------------------------------------------------------------------ propagation */
+let gmstNow = 0, sunNow = sunAt(Date.now()), lastProp = -1e9, track = null, trackFor = null, trackAt = 0;
+function propagateAll() {
+  const t = simNow(), date = new Date(t);
+  gmstNow = sat.gstime(date);
+  sunNow = sunAt(t);
+  for (const s of sats) {
+    const pv = propagate(s, date);
+    if (!pv) { s.ok = false; continue; }
+    const gd = sat.eciToGeodetic(pv.position, gmstNow);
+    s.ok = true; s.pos = pv.position;
+    s.lon = gd.longitude * DEG; s.lat = gd.latitude * DEG; s.alt = gd.height;
+    const v = pv.velocity; s.speed = Math.hypot(v.x, v.y, v.z);
+  }
+  lastProp = performance.now();
+}
+function buildTrack(s) {
+  const t0 = simNow(), per = s.periodMin * 60000;
+  const span = s.group === 'geo' ? 864e5 : per * 1.5;
+  const start = s.group === 'geo' ? t0 - 432e5 : t0 - per * 0.5;
+  const pts = [];
+  for (let i = 0; i <= 240; i++) {
+    const t = start + (span * i) / 240, date = new Date(t);
+    const pv = propagate(s, date);
+    if (!pv) continue;
+    const gd = sat.eciToGeodetic(pv.position, sat.gstime(date));
+    pts.push({ t, lon: gd.longitude * DEG, lat: gd.latitude * DEG, alt: gd.height });
+  }
+  track = pts; trackFor = s; trackAt = performance.now();
+}
+
+/* ------------------------------------------------------------------ drawing */
+let hits = [];
+function rampColor(rate, pal) {
+  let i = 0; while (i < RATE_BINS.length && rate >= RATE_BINS[i]) i++;
+  return pal.ramp[i];
+}
+function draw() {
+  const pal = SENSORS[state.sensor];
+  rotF = d3.geoRotation(projection.rotate());
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, W, H);
+  hits = [];
+  const R = projection.scale();
+
+  // atmosphere rim
+  const g = ctx.createRadialGradient(W / 2, H / 2, R * 0.98, W / 2, H / 2, R * 1.08);
+  g.addColorStop(0, pal.rim); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(W / 2, H / 2, R * 1.08, 0, 2 * Math.PI); ctx.fill();
+
+  ctx.beginPath(); path(sphere); ctx.fillStyle = pal.ocean; ctx.fill();
+  if (state.layers.graticule) { ctx.beginPath(); path(graticule); ctx.strokeStyle = pal.grat; ctx.lineWidth = 1; ctx.stroke(); }
+  ctx.beginPath(); path(land); ctx.fillStyle = pal.land; ctx.fill();
+  if (state.layers.homicide) {
+    for (const c of countries) {
+      ctx.beginPath(); path(c); ctx.fillStyle = rampColor(c.properties.rate, pal); ctx.globalAlpha = 0.9; ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  if (state.layers.night) {
+    const anti = [sunNow.lon + 180, -sunNow.lat];
+    ctx.fillStyle = pal.night;
+    ctx.beginPath(); path(d3.geoCircle().center(anti).radius(90)()); ctx.fill();
+    ctx.globalAlpha = 0.5; ctx.beginPath(); path(d3.geoCircle().center(anti).radius(84)()); ctx.fill(); ctx.globalAlpha = 1;
+  }
+  ctx.beginPath(); path(land); ctx.strokeStyle = pal.coast; ctx.lineWidth = 0.8; ctx.stroke();
+  if (state.target?.kind === 'country') {
+    ctx.beginPath(); path(state.target.ref); ctx.strokeStyle = pal.accent; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+
+  // airports
+  if (state.layers.airports) {
+    ctx.fillStyle = pal.airport; ctx.strokeStyle = pal.airport;
+    const labels = state.zoom >= 5;
+    ctx.font = '10px "JetBrains Mono", monospace';
+    for (const a of airports) {
+      const p = screen(a.lon, a.lat);
+      if (!p.visible || p.x < -10 || p.y < -10 || p.x > W + 10 || p.y > H + 10) continue;
+      const s = a.large ? 2.2 : 1.5;
+      ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+      if (labels && (a.large || state.zoom >= 9)) { ctx.fillStyle = pal.ink; ctx.fillText(a.code, p.x + 4, p.y - 3); ctx.fillStyle = pal.airport; }
+      hits.push({ x: p.x, y: p.y, kind: 'airport', ref: a, pri: 1 });
+    }
+  }
+
+  // Tokyo site marker (always)
+  {
+    const p = screen(TOKYO.lon, TOKYO.lat);
+    if (p.visible) {
+      ctx.strokeStyle = pal.japan; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 2 * Math.PI); ctx.stroke();
+      ctx.fillStyle = pal.japan; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, 2 * Math.PI); ctx.fill();
+      ctx.font = '11px "Share Tech Mono", monospace'; ctx.fillText('TOKYO', p.x + 9, p.y + 4);
+      hits.push({ x: p.x, y: p.y, kind: 'site', ref: TOKYO, pri: 3 });
+    }
+  }
+
+  // selected satellite: track and footprint
+  const ts = state.target?.kind === 'sat' ? state.target.ref : null;
+  if (ts && ts.ok) {
+    if (trackFor !== ts || performance.now() - trackAt > 3000) buildTrack(ts);
+    const now = simNow();
+    const footR = Math.acos(RE / (RE + ts.alt)) * DEG;
+    ctx.beginPath(); path(d3.geoCircle().center([ts.lon, ts.lat]).radius(footR)());
+    ctx.fillStyle = pal.accent; ctx.globalAlpha = 0.06; ctx.fill(); ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = pal.accent; ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    if (state.trueAlt) {
+      for (let i = 1; i < track.length; i++) {
+        const a = track[i - 1], b = track[i];
+        const pa = screen(a.lon, a.lat, a.alt), pb = screen(b.lon, b.lat, b.alt);
+        if (!pa.visible || !pb.visible) continue;
+        ctx.globalAlpha = b.t < now ? 0.35 : 0.9;
+        ctx.strokeStyle = pal.accent; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } else {
+      const past = track.filter((p) => p.t <= now).map((p) => [p.lon, p.lat]);
+      const fut = track.filter((p) => p.t >= now).map((p) => [p.lon, p.lat]);
+      ctx.strokeStyle = pal.accent; ctx.lineWidth = 1.2;
+      if (past.length > 1) { ctx.globalAlpha = 0.35; ctx.beginPath(); path({ type: 'LineString', coordinates: past }); ctx.stroke(); }
+      if (fut.length > 1) { ctx.globalAlpha = 0.9; ctx.beginPath(); path({ type: 'LineString', coordinates: fut }); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // satellites
+  let visCount = 0;
+  for (const s of sats) {
+    if (!s.ok || !GROUPS[s.group].on) continue;
+    const p = screen(s.lon, s.lat, s.alt);
+    if (!p.visible || p.x < -6 || p.y < -6 || p.x > W + 6 || p.y > H + 6) continue;
+    visCount++;
+    if (s.japan) {
+      ctx.strokeStyle = pal.japan; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(p.x, p.y - 4); ctx.lineTo(p.x + 4, p.y); ctx.lineTo(p.x, p.y + 4); ctx.lineTo(p.x - 4, p.y); ctx.closePath(); ctx.stroke();
+    } else {
+      const size = s.group === 'stations' ? 4 : 2.4;
+      ctx.fillStyle = pal.sats[s.group];
+      ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
+    }
+    if (stations.includes(s)) {
+      ctx.fillStyle = pal.sats.stations; ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillText(s.display, p.x + 6, p.y + 3);
+    }
+    hits.push({ x: p.x, y: p.y, kind: 'sat', ref: s, pri: s.group === 'stations' || s.japan ? 2 : 1.5 });
+  }
+
+  // target reticle
+  if (state.target) {
+    const t = state.target, r = t.ref;
+    const p = t.kind === 'sat' ? (r.ok ? screen(r.lon, r.lat, r.alt) : null) : t.kind === 'country' ? null : screen(r.lon, r.lat);
+    if (p && p.visible) {
+      ctx.strokeStyle = pal.accent; ctx.lineWidth = 1.2;
+      const a = 11, b = 5;
+      ctx.beginPath();
+      for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        ctx.moveTo(p.x + sx * a, p.y + sy * (a - b)); ctx.lineTo(p.x + sx * a, p.y + sy * a); ctx.lineTo(p.x + sx * (a - b), p.y + sy * a);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // HUD text
+  const c = projection.rotate();
+  $('hudTl').innerHTML = `CTR <b>${ll(-c[1], -c[0])}</b><br>ZOOM <b>${state.zoom.toFixed(1)}×</b> · ${state.trueAlt ? 'TRUE ALTITUDE' : 'GROUND TRACK'}`;
+  $('hudTr').innerHTML = `SENSOR <b>${pal.label}</b><br>SATS IN VIEW <b>${visCount}</b> / ${sats.length}`;
+}
+
+/* ------------------------------------------------------------------ interaction */
+const tip = $('tip');
+const pointers = new Map();
+let dragStart = null, pinchDist = 0, moved = 0;
+function nearestHit(x, y) {
+  let best = null, bd = 11 * 11;
+  for (const h of hits) {
+    const d = (h.x - x) ** 2 + (h.y - y) ** 2 - h.pri * 6;
+    if (d < bd) { bd = d; best = h; }
+  }
+  return best;
+}
+function countryAt(x, y) {
+  if (!state.layers.homicide) return null;
+  const ll = projection.invert([x, y]);
+  if (!ll || d3.geoDistance(ll, [-projection.rotate()[0], -projection.rotate()[1]]) > Math.PI / 2) return null;
+  return countries.find((c) => d3.geoContains(c, ll)) || null;
+}
+function localXY(e) { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, localXY(e));
+  if (pointers.size === 1) { dragStart = localXY(e); moved = 0; }
+  if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchDist = Math.hypot(a[0] - b[0], a[1] - b[1]); }
+});
+canvas.addEventListener('pointermove', (e) => {
+  const [x, y] = localXY(e);
+  if (pointers.has(e.pointerId)) {
+    const prev = pointers.get(e.pointerId);
+    pointers.set(e.pointerId, [x, y]);
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const dist = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      if (pinchDist) setZoom(state.zoom * dist / pinchDist);
+      pinchDist = dist; moved += 10; return;
+    }
+    const dx = x - prev[0], dy = y - prev[1];
+    moved += Math.abs(dx) + Math.abs(dy);
+    if (moved > 4) {
+      canvas.classList.add('dragging');
+      const r = projection.rotate(), k = 0.25 / Math.sqrt(state.zoom);
+      projection.rotate([r[0] + dx * k, Math.max(-89, Math.min(89, r[1] - dy * k)), r[2]]);
+      if (state.follow) setFollow(false);
+      tip.hidden = true;
+    }
+    return;
+  }
+  const h = nearestHit(x, y);
+  const c = h ? null : countryAt(x, y);
+  state.hover = h || (c ? { kind: 'country', ref: c } : null);
+  canvas.classList.toggle('pointing', !!state.hover);
+  if (state.hover) {
+    tip.hidden = false;
+    tip.style.left = `${Math.min(x, W - 180)}px`; tip.style.top = `${Math.min(y, H - 50)}px`;
+    tip.innerHTML = tipText(state.hover);
+  } else tip.hidden = true;
+});
+function endPointer(e) {
+  const wasClick = pointers.size === 1 && moved <= 4;
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinchDist = 0;
+  canvas.classList.remove('dragging');
+  if (wasClick && e.type === 'pointerup') {
+    const [x, y] = localXY(e);
+    const h = nearestHit(x, y);
+    const c = h ? null : countryAt(x, y);
+    if (h) select(h.kind, h.ref); else if (c) select('country', c);
+  }
+}
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('pointerleave', () => { if (!pointers.size) tip.hidden = true; });
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); setZoom(state.zoom * Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+function setZoom(z) {
+  state.zoom = Math.max(state.trueAlt ? 0.12 : 0.6, Math.min(14, z));
+  applyScale();
+}
+function tipText(h) {
+  const r = h.ref;
+  if (h.kind === 'sat') return `${esc(r.display)}<small>${GROUPS[r.group].label} · ${num(r.alt)} km</small>`;
+  if (h.kind === 'airport') return `${esc(r.code)} · ${esc(r.name)}<small>${esc(r.city)}, ${esc(r.country)} · ${num(r.distTokyo)} km from Tokyo</small>`;
+  if (h.kind === 'site') return `Tokyo<small>ground site for the sky panel</small>`;
+  if (h.kind === 'country') return `${esc(r.properties.name)}<small>${r.properties.rate} homicides / 100k (${r.properties.year})</small>`;
+  return '';
+}
+
+/* ------------------------------------------------------------------ selection & camera */
+let flyTo = null;
+function select(kind, ref, { fly = false } = {}) {
+  state.target = { kind, ref };
+  if (kind === 'sat') { buildTrack(ref); setFollow(fly || state.follow); }
+  else { setFollow(false); if (fly) flyTo = [ref.lon, ref.lat]; }
+  renderTarget();
+  renderRosters(true);
+}
+function setFollow(on) {
+  state.follow = on && state.target?.kind === 'sat';
+  $('btnFollow').setAttribute('aria-pressed', String(state.follow));
+}
+const wrap = (a) => ((a + 540) % 360) - 180;
+function easeCamera() {
+  let dest = null;
+  if (state.follow && state.target?.kind === 'sat' && state.target.ref.ok) dest = [state.target.ref.lon, state.target.ref.lat];
+  else if (flyTo) dest = flyTo;
+  if (!dest) return;
+  const r = projection.rotate();
+  const want = [-dest[0], -Math.max(-70, Math.min(70, dest[1]))];
+  const dl = wrap(want[0] - r[0]), dp = want[1] - r[1];
+  const f = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0.1;
+  projection.rotate([r[0] + dl * f, r[1] + dp * f, 0]);
+  if (flyTo && Math.abs(dl) < 0.05 && Math.abs(dp) < 0.05) flyTo = null;
+}
+function goTokyo() {
+  state.target = { kind: 'site', ref: TOKYO };
+  setFollow(false);
+  flyTo = [TOKYO.lon, TOKYO.lat * 0.75];
+  if (state.zoom < 2) setZoom(2.6);
+  renderTarget();
+}
+
+/* ------------------------------------------------------------------ panels */
+function renderTarget() {
+  const el = $('target'), t = state.target;
+  if (!t) { el.innerHTML = '<h2>Selection</h2><p class="note">Click a satellite, airport or country on the globe.</p>'; return; }
+  const r = t.ref;
+  if (t.kind === 'sat') {
+    const age = daysOld(r.epochMs);
+    let look = '';
+    if (r.ok) {
+      const lk = lookFrom(tokyoGd, r.pos, gmstNow);
+      look = lk.el >= 0 ? `${lk.el.toFixed(1)}° el, ${compass(lk.az)} ${lk.az.toFixed(0)}°` : `below horizon (${lk.el.toFixed(0)}°)`;
+    }
+    el.innerHTML = `
+      <h2>Selection <em>${GROUPS[r.group].label}${r.japan ? ' · Japan' : ''}</em></h2>
+      <h3>${esc(r.display)}</h3>
+      <div class="sub">${r.display !== r.name ? esc(r.name) + ' · ' : ''}NORAD ${r.norad}</div>
+      <div class="grid2">
+        <div class="kv"><small>Position</small><output id="tPos">${r.ok ? ll(r.lat, r.lon) : '—'}</output></div>
+        <div class="kv"><small>Altitude</small><output id="tAlt">${r.ok ? num(r.alt) + ' km' : '—'}</output></div>
+        <div class="kv"><small>Speed</small><output id="tSpd">${r.ok ? r.speed.toFixed(2) + ' km/s' : '—'}</output></div>
+        <div class="kv"><small>Period</small><output>${num(r.periodMin, 1)} min</output></div>
+        <div class="kv"><small>Inclination</small><output>${r.incl.toFixed(1)}°</output></div>
+        <div class="kv"><small>From Tokyo</small><output id="tLook">${look}</output></div>
+      </div>
+      <p class="note ${age > 7 && r.group !== 'geo' && r.periodMin < 200 ? 'warnline' : ''}">Elements dated ${fmtJstDate.format(new Date(r.epochMs))} (${age.toFixed(0)} days old). ${r.periodMin < 200 ? 'Low orbits drift fastest with age.' : 'High orbits stay accurate for weeks.'}</p>`;
+  } else if (t.kind === 'airport') {
+    el.innerHTML = `
+      <h2>Selection <em>${r.large ? 'Large airport' : 'Medium airport'}</em></h2>
+      <h3>${esc(r.name)}</h3>
+      <div class="sub">${esc(r.code)}${r.icao !== r.code ? ' / ' + esc(r.icao) : ''} · ${esc(r.city)}, ${esc(r.country)}</div>
+      <div class="grid2">
+        <div class="kv"><small>Position</small><output>${ll(r.lat, r.lon)}</output></div>
+        <div class="kv"><small>From Tokyo</small><output>${num(r.distTokyo)} km</output></div>
+        <div class="kv"><small>Elevation</small><output>${r.elevFt != null ? num(r.elevFt) + ' ft' : '—'}</output></div>
+        <div class="kv"><small>Longest runway</small><output>${r.longestFt ? num(r.longestFt) + ' ft' : '—'}</output></div>
+        <div class="kv"><small>Runways</small><output>${r.rwys}</output></div>
+      </div>`;
+  } else if (t.kind === 'country') {
+    const p = r.properties;
+    const rank = rankedRates.filter((x) => x < p.rate).length + 1;
+    el.innerHTML = `
+      <h2>Selection <em>Country</em></h2>
+      <h3>${esc(p.name)}</h3>
+      <div class="grid2">
+        <div class="kv"><small>Homicides / 100k</small><output>${p.rate}</output></div>
+        <div class="kv"><small>Year</small><output>${esc(p.year)}</output></div>
+        <div class="kv"><small>Rank (1 = safest)</small><output>${rank} of ${countries.length}</output></div>
+      </div>
+      <p class="note">A country-wide average from ${esc(D.meta.safetySource)}. It says nothing about any particular street.</p>`;
+  } else {
+    const jp = countries.find((c) => c.properties.iso === 'JPN');
+    const jpRank = jp ? rankedRates.filter((x) => x < jp.properties.rate).length + 1 : null;
+    const near = airports.filter((a) => a.distTokyo < 120 && /^[A-Z]{3}$/.test(a.code)).sort((a, b) => a.distTokyo - b.distTokyo).slice(0, 6);
+    el.innerHTML = `
+      <h2>Selection <em>Ground site</em></h2>
+      <h3>Tokyo</h3>
+      <div class="sub">Marunouchi · ${ll(TOKYO.lat, TOKYO.lon)}</div>
+      <div class="grid2">
+        <div class="kv"><small>Airports ≤120 km</small><output>${near.map((a) => esc(a.code)).join(', ') || '—'}</output></div>
+        <div class="kv"><small>Japan homicides</small><output>${jp ? jp.properties.rate + ' / 100k' : '—'}</output></div>
+      </div>
+      <p class="note">${jp ? `Japan ranks <b>${jpRank} of ${countries.length}</b> on the homicide index (1 = lowest). ` : ''}Pick a satellite in the Tokyo panels to see its orbit, or search for one.</p>`;
+  }
+}
+function refreshTargetLive() {
+  const t = state.target;
+  if (!t || t.kind !== 'sat' || !t.ref.ok) return;
+  const r = t.ref, set = (id, v) => { const e = $(id); if (e) e.textContent = v; };
+  set('tPos', ll(r.lat, r.lon)); set('tAlt', num(r.alt) + ' km'); set('tSpd', r.speed.toFixed(2) + ' km/s');
+  const lk = lookFrom(tokyoGd, r.pos, gmstNow);
+  set('tLook', lk.el >= 0 ? `${lk.el.toFixed(1)}° el, ${compass(lk.az)} ${lk.az.toFixed(0)}°` : `below horizon (${lk.el.toFixed(0)}°)`);
+}
+
+function rowHandler(tbody) {
+  tbody.addEventListener('click', (e) => {
+    const tr = e.target.closest('tr[data-norad]'); if (!tr) return;
+    const s = byNorad.get(tr.dataset.norad); if (s) select('sat', s, { fly: true });
+  });
+}
+rowHandler($('ovhRows')); rowHandler($('jpRows')); rowHandler($('passRows'));
+
+let lastRoster = 0;
+function renderRosters(force) {
+  if (!force && performance.now() - lastRoster < 1000) return;
+  lastRoster = performance.now();
+  const pal = SENSORS[state.sensor];
+  const selNorad = state.target?.kind === 'sat' ? state.target.ref.norad : null;
+  const over = [];
+  const counts = {};
+  for (const s of sats) {
+    if (!s.ok || !GROUPS[s.group].on) continue;
+    const lk = lookFrom(tokyoGd, s.pos, gmstNow);
+    if (lk.el < 10) continue;
+    counts[s.group] = (counts[s.group] || 0) + 1;
+    if (s.group !== 'geo') over.push({ s, ...lk });
+  }
+  over.sort((a, b) => b.el - a.el);
+  $('ovhCount').textContent = `${Object.values(counts).reduce((a, b) => a + b, 0)} objects`;
+  $('ovhChips').innerHTML = Object.keys(GROUPS).filter((g) => counts[g])
+    .map((g) => `<span class="chip"><i style="background:${pal.sats[g]}"></i>${GROUPS[g].label} ${counts[g]}</span>`).join('');
+  $('ovhRows').innerHTML = over.slice(0, 10).map(({ s, el, az, range }) =>
+    `<tr data-norad="${s.norad}" class="${s.japan ? 'jp' : ''}${s.norad === selNorad ? ' sel' : ''}"><td title="${esc(s.name)}"><span class="dot" style="background:${s.japan ? pal.japan : pal.sats[s.group]}"></span>${esc(s.display)}</td><td class="n">${el.toFixed(0)}°</td><td class="n">${compass(az)} ${az.toFixed(0)}</td><td class="n">${num(range)}</td></tr>`
+  ).join('') || '<tr><td colspan="4" class="empty">No moving objects above 10° in the enabled layers.</td></tr>';
+
+  $('jpRows').innerHTML = japanSats.filter((s) => s.ok).map((s) => ({ s, ...lookFrom(tokyoGd, s.pos, gmstNow) }))
+    .sort((a, b) => b.el - a.el).slice(0, 12).map(({ s, el, az }) =>
+      `<tr data-norad="${s.norad}" class="jp${s.norad === selNorad ? ' sel' : ''}"><td title="${esc(s.name)}">${esc(s.name.replace(/\s*\(.*\)/, ''))}</td><td class="n">${el >= 0 ? el.toFixed(0) + '°' : '<span style="color:var(--dim)">below</span>'}</td><td class="n">${compass(az)} ${az.toFixed(0)}</td><td class="n">${s.lon.toFixed(1)}°</td></tr>`
+    ).join('');
+}
+
+/* Next passes of the crewed stations over Tokyo. */
+let passesAt = -Infinity, passes = [];
+function computePasses() {
+  const t0 = simNow();
+  passesAt = t0;
+  passes = [];
+  const step = 20000, end = t0 + 48 * 3600e3;
+  for (const s of stations) {
+    let cur = null;
+    for (let t = t0; t <= end; t += step) {
+      const date = new Date(t);
+      const pv = propagate(s, date);
+      if (!pv) break;
+      const lk = lookFrom(tokyoGd, pv.position, sat.gstime(date));
+      if (lk.el >= 10) {
+        if (!cur) cur = { s, start: t, max: lk.el, maxAz: lk.az, visible: false };
+        if (lk.el > cur.max) { cur.max = lk.el; cur.maxAz = lk.az; }
+        if (!cur.visible) {
+          const sun = sunAt(t);
+          if (sunElevation(sun, TOKYO.lat, TOKYO.lon) < -6 && sunlit(pv.position, sun.eci)) cur.visible = true;
+        }
+        cur.end = t;
+      } else if (cur) { passes.push(cur); cur = null; }
+    }
+    if (cur) passes.push(cur);
+  }
+  passes.sort((a, b) => a.start - b.start);
+  const pal = SENSORS[state.sensor];
+  $('passRows').innerHTML = passes.slice(0, 8).map((p) =>
+    `<tr data-norad="${p.s.norad}"><td><span class="dot" style="background:${pal.sats.stations}"></span>${esc(p.s.display.replace(' (CSS)', ''))}</td><td>${fmtJstDay.format(new Date(p.start))}</td><td class="n">${p.max.toFixed(0)}°</td><td class="n">${Math.max(1, Math.round((p.end - p.start) / 60000))}</td><td class="${p.visible ? 'vis' : ''}">${p.visible ? 'visible' : 'daylight/shadow'}</td></tr>`
+  ).join('') || '<tr><td colspan="5" class="empty">No passes above 10° in the next 48 hours.</td></tr>';
+  const age = Math.min(...stations.map((s) => daysOld(s.epochMs)));
+  $('passWarn').textContent = age > 3
+    ? `Station elements are ${age.toFixed(0)} days old, so these times can be off by many minutes or miss reboosts. Treat them as a rough schedule and confirm with current elements before going outside.`
+    : '';
+  $('passWarn').hidden = age <= 3;
+}
+
+/* Sun over Tokyo: scan the JST day in one-minute steps. */
+let sunDayKey = '';
+function renderSun() {
+  const t = simNow();
+  const sun = sunAt(t);
+  const el = sunElevation(sun, TOKYO.lat, TOKYO.lon);
+  $('sunEl').textContent = `${el.toFixed(1)}°`;
+  $('sunState').textContent = el > -0.833 ? 'daytime' : el > -6 ? 'civil twilight' : el > -18 ? 'twilight' : 'night';
+  const jstMidnight = Math.floor((t + 9 * 3600e3) / 864e5) * 864e5 - 9 * 3600e3;
+  const pct = ((t - jstMidnight) / 864e5) * 100;
+  $('dayNow').style.left = `calc(${pct.toFixed(2)}% - 1px)`;
+  const key = String(jstMidnight);
+  if (key === sunDayKey) return;
+  sunDayKey = key;
+  let rise = null, set = null, prev = null;
+  for (let m = 0; m <= 1440; m += 1) {
+    const tm = jstMidnight + m * 60000;
+    const e = sunElevation(sunAt(tm), TOKYO.lat, TOKYO.lon);
+    if (prev !== null) {
+      if (prev < -0.833 && e >= -0.833) rise = tm;
+      if (prev >= -0.833 && e < -0.833) set = tm;
+    }
+    prev = e;
+  }
+  $('sunrise').textContent = rise ? fmtJstHm.format(new Date(rise)) : '—';
+  $('sunset').textContent = set ? fmtJstHm.format(new Date(set)) : '—';
+  if (rise && set) {
+    $('dayFill').style.left = `${((rise - jstMidnight) / 864e5) * 100}%`;
+    $('dayFill').style.width = `${((set - rise) / 864e5) * 100}%`;
+  }
+}
+
+/* ------------------------------------------------------------------ controls */
+function renderSensors() {
+  $('sensors').innerHTML = Object.entries(SENSORS).map(([k, v], i) =>
+    `<button class="btn" data-sensor="${k}" aria-pressed="${state.sensor === k}">${v.label}<kbd>${i + 1}</kbd></button>`).join('');
+}
+function setSensor(k) {
+  state.sensor = k;
+  stage.dataset.sensor = k;
+  document.documentElement.style.setProperty('--accent', SENSORS[k].accent);
+  try { localStorage.setItem('gev-tokyo-sensor', k); } catch {}
+  renderSensors(); renderLayers(); renderLegend(); renderRosters(true); computePasses();
+}
+$('sensors').addEventListener('click', (e) => { const b = e.target.closest('[data-sensor]'); if (b) setSensor(b.dataset.sensor); });
+
+function renderLayers() {
+  const pal = SENSORS[state.sensor];
+  const counts = {};
+  for (const s of sats) counts[s.group] = (counts[s.group] || 0) + 1;
+  const satRows = Object.entries(GROUPS).map(([k, g]) =>
+    `<label class="layer"><input type="checkbox" id="lg-${k}" data-group="${k}" ${g.on ? 'checked' : ''}><i style="background:${pal.sats[k]}"></i><span>${g.label}</span><em>${counts[k] || 0}</em></label>`).join('');
+  const other = [
+    ['airports', 'Airports', `${airports.length}`],
+    ['homicide', 'Homicide rate', `${countries.length}`],
+    ['night', 'Night side', ''],
+    ['graticule', 'Graticule', ''],
+  ].map(([k, label, n]) =>
+    `<label class="layer"><input type="checkbox" id="ll-${k}" data-layer="${k}" ${state.layers[k] ? 'checked' : ''}><i style="background:${k === 'homicide' ? pal.ramp[4] : k === 'airports' ? pal.airport : 'transparent'};${k === 'night' || k === 'graticule' ? 'border:1px solid var(--line-2)' : ''}"></i><span>${label}</span><em>${n}</em></label>`).join('');
+  $('layers').innerHTML = satRows + '<div style="height:6px"></div>' + other +
+    `<label class="layer" style="margin-top:4px"><i style="border:1px solid ${pal.japan};transform:rotate(45deg);width:7px;height:7px"></i><span>Japanese satellite</span><em>${japanSats.length}</em></label>`;
+}
+$('layers').addEventListener('change', (e) => {
+  const i = e.target;
+  if (i.dataset.group) GROUPS[i.dataset.group].on = i.checked;
+  if (i.dataset.layer) state.layers[i.dataset.layer] = i.checked;
+  renderLegend(); renderRosters(true);
+});
+function renderLegend() {
+  const lg = $('legend');
+  lg.hidden = !state.layers.homicide;
+  if (lg.hidden) return;
+  const pal = SENSORS[state.sensor];
+  lg.innerHTML = `<small style="color:var(--muted);font-size:9.5px;letter-spacing:.08em">HOMICIDES PER 100K</small>
+    <div class="ramp">${pal.ramp.map((c) => `<span style="background:${c}"></span>`).join('')}</div>
+    <div class="ticks"><span>&lt;1</span>${RATE_BINS.map((b) => `<span>${b}+</span>`).join('')}</div>`;
+}
+
+document.querySelectorAll('[data-warp]').forEach((b) => b.addEventListener('click', () => setWarp(+b.dataset.warp)));
+function setWarp(w) {
+  if (w === 1) { state.simBase = Date.now(); } else { state.simBase = simNow(); }
+  state.realBase = performance.now(); state.warp = w;
+  document.querySelectorAll('[data-warp]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.warp === w)));
+  $('simLabel').textContent = w === 1 ? 'SIM · LIVE' : `SIM · ×${w}`;
+  computePasses();
+}
+$('btnFollow').addEventListener('click', () => setFollow(!state.follow));
+$('btnTokyo').addEventListener('click', goTokyo);
+$('btnAlt').addEventListener('click', () => {
+  state.trueAlt = !state.trueAlt;
+  $('btnAlt').setAttribute('aria-pressed', String(state.trueAlt));
+  if (state.trueAlt && state.zoom > 1) setZoom(0.2); else if (!state.trueAlt) setZoom(Math.max(state.zoom, 1.2));
+});
+
+// search
+const results = $('results');
+let found = [], foundIdx = 0;
+$('q').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  if (q.length < 2) { results.hidden = true; return; }
+  const satHits = sats.filter((s) => s.display.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || s.norad === q)
+    .slice(0, 6).map((s) => ({ kind: 'sat', ref: s, label: s.display, sub: GROUPS[s.group].label }));
+  const apHits = airports.filter((a) => a.code.toLowerCase() === q || a.icao.toLowerCase() === q || a.name.toLowerCase().includes(q) || a.city.toLowerCase().includes(q))
+    .sort((a, b) => a.distTokyo - b.distTokyo).slice(0, 6).map((a) => ({ kind: 'airport', ref: a, label: `${a.code} · ${a.name}`, sub: `${num(a.distTokyo)} km` }));
+  found = [...apHits.filter((h) => h.ref.code.toLowerCase() === q), ...satHits, ...apHits.filter((h) => h.ref.code.toLowerCase() !== q)].slice(0, 8);
+  foundIdx = 0;
+  results.innerHTML = found.map((h, i) => `<li data-i="${i}" class="${i === 0 ? 'on' : ''}"><span>${esc(h.label)}</span><small>${esc(h.sub)}</small></li>`).join('')
+    || '<li><small>No match. Try a satellite name or an IATA code.</small></li>';
+  results.hidden = false;
+});
+$('q').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && found[foundIdx]) { pick(found[foundIdx]); }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    foundIdx = (foundIdx + (e.key === 'ArrowDown' ? 1 : -1) + found.length) % Math.max(1, found.length);
+    results.querySelectorAll('li').forEach((li, i) => li.classList.toggle('on', i === foundIdx));
+  }
+  if (e.key === 'Escape') results.hidden = true;
+});
+results.addEventListener('click', (e) => { const li = e.target.closest('li[data-i]'); if (li) pick(found[+li.dataset.i]); });
+function pick(h) {
+  results.hidden = true; $('q').value = '';
+  if (h.kind === 'airport' && state.zoom < 4) setZoom(5);
+  select(h.kind, h.ref, { fly: true });
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input')) return;
+  const keys = Object.keys(SENSORS);
+  if (/^[1-4]$/.test(e.key)) setSensor(keys[+e.key - 1]);
+  else if (e.key === 'f' || e.key === 'F') setFollow(!state.follow);
+  else if (e.key === 't' || e.key === 'T') goTokyo();
+  else if (e.key === 'a' || e.key === 'A') $('btnAlt').click();
+  else if (e.key === 'Escape') { state.target = null; setFollow(false); renderTarget(); }
+});
+
+/* footer */
+const tleDate = fmtJstDate.format(new Date(newestEpoch));
+$('foot').innerHTML = `
+  <span>Built from <a href="https://github.com/lh4733684-blip/gods-eye-view" target="_blank" rel="noopener">gods-eye-view</a> @ ${esc(D.meta.commit)} using its bundled offline data. No live feeds: positions are computed in your browser with SGP4.</span>
+  <span>Satellites: CelesTrak elements up to ${tleDate}</span>
+  <span>Airports: OurAirports (public domain), ${esc(D.meta.airportsGenerated)}</span>
+  <span>Homicide rate: ${esc(D.meta.safetySource)} (CC BY 4.0)</span>
+  <span>Coastlines: Natural Earth 1:50m</span>`;
+
+/* ------------------------------------------------------------------ loop */
+function tickClocks() {
+  const now = new Date();
+  $('clkJst').textContent = fmtJst.format(now);
+  $('clkUtc').textContent = fmtUtc.format(now);
+  const s = new Date(simNow());
+  $('clkSim').textContent = state.warp === 1 ? fmtJst.format(s) : `${fmtJstDay.format(s)} JST`;
+}
+let lastT = performance.now();
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(now) {
+  const dt = Math.min(100, now - lastT); lastT = now;
+  if (now - lastProp > (state.warp > 1 ? 100 : 250)) { propagateAll(); refreshTargetLive(); }
+  if (!pointers.size) easeCamera();
+  if (!pointers.size && !state.follow && !flyTo && state.target?.kind !== 'site' && !reduced && state.zoom < 1.5) {
+    const r = projection.rotate(); projection.rotate([r[0] + dt * 0.004, r[1], r[2]]);
+  }
+  draw();
+  renderRosters(false);
+  if (Math.abs(simNow() - passesAt) > 15 * 60000) computePasses();
+  requestAnimationFrame(frame);
+}
+setInterval(() => { tickClocks(); renderSun(); }, 500);
+
+resize();
+setSensor(state.sensor);
+propagateAll();
+state.target = { kind: 'site', ref: TOKYO };
+renderTarget();
+tickClocks(); renderSun(); renderRosters(true); computePasses();
+requestAnimationFrame(frame);
+})();
+</script>
