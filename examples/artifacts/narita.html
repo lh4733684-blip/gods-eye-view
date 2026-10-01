@@ -1,0 +1,709 @@
+<title>God's Eye Narita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500&family=Share+Tech+Mono&display=swap">
+<style>
+  /* Same console tokens as the Tokyo page and the app's style.css. */
+  :root {
+    color-scheme: dark;
+    --bg: #07090d;
+    --panel: #0c1016;
+    --panel-2: #10161e;
+    --line: #1c2632;
+    --line-2: #283544;
+    --text: #e3e7ea;
+    --muted: #7f8c98;
+    --dim: #53606c;
+    --accent: #00d4ff;
+    --japan: #ff4d5e;
+    --warn: #ffb800;
+    --ok: #3ddc97;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --font-hud: "Share Tech Mono", "JetBrains Mono", ui-monospace, monospace;
+    --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 12px/1.45 var(--font-mono); font-variant-numeric: tabular-nums; }
+  * { box-sizing: border-box; }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+
+  .app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; padding-inline: 16px; padding-block: 10px; }
+
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .brand h1 { margin: 0; font: 20px/1 var(--font-hud); letter-spacing: 0.14em; text-transform: uppercase; }
+  .brand h1 b { color: var(--japan); font-weight: 400; }
+  .brand span { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; }
+  .clocks { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; align-items: center; }
+  .clock { display: grid; gap: 1px; }
+  .clock small, .grp small { color: var(--muted); font-size: 10px; letter-spacing: 0.12em; }
+  .clock output { font: 17px/1.1 var(--font-hud); letter-spacing: 0.04em; }
+  .grp { display: flex; gap: 4px; align-items: center; }
+  .grp small { margin-right: 4px; }
+
+  .btn { background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 2px; padding: 4px 8px; cursor: pointer; font-size: 11px; letter-spacing: 0.06em; }
+  .btn:hover { border-color: var(--accent); }
+  .btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 18%, var(--panel-2)); border-color: var(--accent); }
+  .btn kbd { color: var(--dim); font: inherit; margin-left: 4px; }
+
+  .main { min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr) 290px; gap: 10px; }
+  .panel { min-height: 0; overflow: auto; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; }
+  .sec { padding: 12px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+  .sec:last-child { border-bottom: 0; }
+  .sec h2 { margin: 0; font-size: 10px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+  .sec h2 em { font-style: normal; color: var(--dim); letter-spacing: 0.06em; text-transform: none; }
+  .note { margin: 0; font: 11.5px/1.5 var(--font-sans); color: var(--muted); max-width: 60ch; }
+  .note b { color: var(--text); font-weight: 500; }
+  .warnline { color: var(--warn); }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .kv { display: grid; gap: 1px; min-width: 0; }
+  .kv small { color: var(--dim); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .kv output { font-size: 13px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: 400; color: var(--dim); font-size: 10px; letter-spacing: 0.08em; padding: 2px 4px 4px; border-bottom: 1px solid var(--line); }
+  td { padding: 3px 4px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); white-space: nowrap; }
+  td.name { overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+  th.n, td.n { text-align: right; }
+  tbody.click tr { cursor: pointer; }
+  tbody.click tr:hover td { background: var(--panel-2); }
+  td .dot { display: inline-block; width: 6px; height: 6px; margin-right: 6px; vertical-align: 1px; }
+  .fav td { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  .fav td:first-child { color: var(--accent); }
+  .tail { color: var(--warn); }
+  .vis { color: var(--ok); }
+  .mil { color: var(--warn); }
+  .empty { color: var(--dim); font-size: 11px; }
+
+  .windin { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: end; }
+  .windin label { display: grid; gap: 3px; color: var(--dim); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .windin input { width: 100%; background: var(--bg); border: 1px solid var(--line-2); padding: 5px 6px; border-radius: 2px; font-size: 13px; }
+  .badge { display: inline-block; font-size: 10px; letter-spacing: 0.1em; color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent); padding: 0 5px; }
+
+  .stage { position: relative; min-height: 0; border: 1px solid var(--line); background: var(--bg); overflow: hidden; touch-action: none; }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+  .stage canvas.dragging { cursor: grabbing; }
+  .stage canvas.pointing { cursor: pointer; }
+  .fx { position: absolute; inset: 0; pointer-events: none; }
+  .stage[data-sensor="crt"] .fx { background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px); }
+  .stage[data-sensor="nvg"] .fx { background: radial-gradient(ellipse at center, transparent 55%, rgba(0,12,0,0.85) 100%); }
+  .stage[data-sensor="flir"] .fx { background: radial-gradient(ellipse at center, transparent 70%, rgba(10,0,20,0.5) 100%); }
+  .corner { position: absolute; width: 18px; height: 18px; border-color: var(--accent); border-style: solid; opacity: 0.6; pointer-events: none; }
+  .corner.tl { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
+  .corner.tr { top: 8px; right: 8px; border-width: 1px 1px 0 0; }
+  .corner.bl { bottom: 8px; left: 8px; border-width: 0 0 1px 1px; }
+  .corner.br { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
+  .hud { position: absolute; font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em; pointer-events: none; line-height: 1.5; }
+  .hud b { color: var(--text); font-weight: 400; }
+  .hud.tl { top: 14px; left: 16px; }
+  .hud.tr { top: 14px; right: 16px; text-align: right; }
+  .stage-ctl { position: absolute; bottom: 12px; right: 14px; left: 14px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; pointer-events: none; }
+  .stage-ctl > * { pointer-events: auto; }
+  .tip { position: absolute; pointer-events: none; background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line-2); padding: 5px 8px; font-size: 11px; white-space: nowrap; transform: translate(12px, 12px); }
+  .tip small { color: var(--muted); display: block; }
+
+  .foot { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--dim); font: 10.5px/1.5 var(--font-sans); border-top: 1px solid var(--line); padding-top: 8px; }
+  .foot a { color: var(--muted); }
+
+  @media (max-width: 1100px) {
+    .main { grid-template-columns: 290px minmax(0, 1fr); }
+    .main > .right { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  }
+  @media (max-width: 760px) {
+    html, body { height: auto; }
+    .app { height: auto; }
+    .main { grid-template-columns: minmax(0, 1fr); }
+    .stage { height: 66svh; min-height: 360px; order: -1; }
+    .main > .right { grid-column: auto; display: flex; }
+    .clocks { margin-left: 0; }
+    .panel { overflow: visible; }
+  }
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <h1>God's Eye <b>成田</b></h1>
+      <span>NRT · RJAA · 35.77°N 140.39°E · 141 FT</span>
+    </div>
+    <div class="clocks">
+      <div class="clock"><small>NARITA JST</small><output id="clkJst">--:--:--</output></div>
+      <div class="clock"><small>UTC</small><output id="clkUtc">--:--:--</output></div>
+      <div class="grp" role="group" aria-label="Map scale">
+        <small>SCALE</small>
+        <button class="btn" data-scale="runways">RUNWAYS<kbd>R</kbd></button>
+        <button class="btn" data-scale="approach">APPROACH<kbd>P</kbd></button>
+        <button class="btn" data-scale="kanto">KANTO<kbd>K</kbd></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <aside class="panel left" aria-label="Airport">
+      <section class="sec">
+        <h2>Narita International <em>large · JP</em></h2>
+        <div class="grid3">
+          <div class="kv"><small>Elevation</small><output>141 ft</output></div>
+          <div class="kv"><small>To Tokyo Stn</small><output id="dTokyo">—</output></div>
+          <div class="kv"><small>To Haneda</small><output id="dHnd">—</output></div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Runways <em>true headings from threshold coordinates</em></h2>
+        <table>
+          <thead><tr><th>Runway</th><th class="n">Length</th><th class="n">Width</th><th class="n">True hdg</th></tr></thead>
+          <tbody id="rwyRows"></tbody>
+        </table>
+        <p class="note"><b>A (16R/34L)</b> is 4,000 m and takes the heavies. <b>B (16L/34R)</b> opened in 2002 at 2,180 m and was extended north to 2,500 m in 2009; land disputes dating back to the Sanrizuka struggle kept it short. Runway numbers are magnetic: variation here is about 8° W, so a true track of ~150° reads as 16.</p>
+      </section>
+
+      <section class="sec">
+        <h2>Crosswind <em id="windTag"><span class="badge">EXAMPLE WIND</span></em></h2>
+        <div class="windin">
+          <label for="wDir">From ° true<input id="wDir" type="number" min="0" max="360" step="10" inputmode="numeric"></label>
+          <label for="wSpd">Speed kt<input id="wSpd" type="number" min="0" max="99" step="1" inputmode="numeric"></label>
+          <label for="wGst">Gust kt<input id="wGst" type="number" min="0" max="120" step="1" inputmode="numeric" placeholder="—"></label>
+        </div>
+        <table>
+          <thead><tr><th>Landing</th><th class="n">Head</th><th class="n">Cross</th><th class="n">Gust X</th></tr></thead>
+          <tbody id="windRows"></tbody>
+        </table>
+        <p class="note">Type the wind from the latest RJAA METAR (it reports true direction; ATIS reads magnetic, so add about 8° to an ATIS wind). The highlighted end has the most headwind. This page has no live weather.</p>
+      </section>
+    </aside>
+
+    <section class="stage" id="stage" data-sensor="normal" aria-label="Map of Narita. Drag to pan, scroll or pinch to zoom, click an airfield to centre it.">
+      <canvas id="map"></canvas>
+      <div class="fx"></div>
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div class="hud tl" id="hudTl"></div>
+      <div class="hud tr" id="hudTr"></div>
+      <div class="stage-ctl">
+        <button class="btn" id="tgApp" aria-pressed="true">APPROACH LINES</button>
+        <button class="btn" id="tgRings" aria-pressed="true">RANGE RINGS</button>
+        <span id="sensors" style="display:flex;gap:4px"></span>
+      </div>
+      <div class="tip" id="tip" hidden></div>
+    </section>
+
+    <aside class="panel right" aria-label="Sky and surroundings">
+      <section class="sec">
+        <h2>Sun over Narita <em id="sunState">—</em></h2>
+        <div class="grid3">
+          <div class="kv"><small>Sunrise</small><output id="sunrise">--:--</output></div>
+          <div class="kv"><small>Sunset</small><output id="sunset">--:--</output></div>
+          <div class="kv"><small>Elevation</small><output id="sunEl">--</output></div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Overhead Narita now <em id="ovhCount">—</em></h2>
+        <table>
+          <thead><tr><th>Satellite</th><th class="n">El</th><th class="n">Az</th><th class="n">Range km</th></tr></thead>
+          <tbody id="ovhRows"></tbody>
+        </table>
+      </section>
+
+      <section class="sec">
+        <h2>Next station passes <em>48 h · ≥10°</em></h2>
+        <table>
+          <thead><tr><th>Station</th><th>Start JST</th><th class="n">Max</th><th>Visible</th></tr></thead>
+          <tbody id="passRows"></tbody>
+        </table>
+        <p class="note warnline" id="passWarn" hidden></p>
+      </section>
+
+      <section class="sec">
+        <h2>Airfields around Narita <em>≤160 km</em></h2>
+        <table>
+          <thead><tr><th>Airfield</th><th class="n">km</th><th class="n">Brg</th><th class="n">Rwy m</th></tr></thead>
+          <tbody id="afRows" class="click"></tbody>
+        </table>
+        <p class="note">Amber names are military bases, as named in OurAirports: US forces at Yokota and Atsugi, and Japan Self-Defense Force fields at Shimofusa, Kisarazu, Iruma, Hyakuri and Tateyama.</p>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="foot" id="foot"></footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/satellite.js@6.0.2/dist/satellite.min.js"></script>
+<script>
+(() => {
+'use strict';
+const D = /*__GEV_DATA__*/null;
+const $ = (id) => document.getElementById(id);
+if (!D || !window.satellite) { $('hudTl').textContent = 'Could not load the orbit library. Reload the page to try again.'; return; }
+const sat = window.satellite;
+const RAD = Math.PI / 180, DEG = 180 / Math.PI, RE = 6378.137, NM = 1.852;
+
+/* ---------------------------------------------------------------- geometry */
+const NRT = D.airfields.find((a) => a.icao === 'RJAA');
+const SITE = { lat: NRT.lat, lon: NRT.lon, hKm: (NRT.elevFt || 0) * 0.0003048 };
+const KX = Math.cos(NRT.lat * RAD) * 111.32, KY = 110.574;
+const toKm = (lat, lon) => [(lon - NRT.lon) * KX, (lat - NRT.lat) * KY];
+function distKm(a, b) {
+  const dLat = (b.lat - a.lat) * RAD, dLon = (b.lon - a.lon) * RAD;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * RAD) * Math.cos(b.lat * RAD) * Math.sin(dLon / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+function bearing(a, b) {
+  const p1 = a.lat * RAD, p2 = b.lat * RAD, dl = (b.lon - a.lon) * RAD;
+  const y = Math.sin(dl) * Math.cos(p2), x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+  return (Math.atan2(y, x) * DEG + 360) % 360;
+}
+const MIL_RX = /air base|airfield|naval|JMSDF|JGSDF|JASDF|army|marine/i;
+
+// Each runway gives two landing directions. For "16R/34L", the le end is 16R:
+// you touch down at le and roll toward he.
+const ends = [];
+const runways = NRT.runways.map((r, i) => {
+  const [a, b] = r.ident.split('/');
+  const le = { lat: r.le[0], lon: r.le[1] }, he = { lat: r.he[0], lon: r.he[1] };
+  const hdgLe = bearing(le, he), hdgHe = (hdgLe + 180) % 360;
+  const rw = { ...r, name: i === 0 ? 'A' : 'B', le, he, hdgLe, hdgHe, lenKm: distKm(le, he) };
+  ends.push({ ident: a, at: le, hdg: hdgLe, rw }, { ident: b, at: he, hdg: hdgHe, rw });
+  return rw;
+});
+const others = D.airfields.filter((a) => a !== NRT)
+  .map((a) => ({ ...a, dist: distKm(NRT, a), brg: bearing(NRT, a), mil: MIL_RX.test(a.name) }))
+  .sort((a, b) => a.dist - b.dist);
+const HND = others.find((a) => a.icao === 'RJTT');
+const TOKYO_STN = { lat: 35.6812, lon: 139.7671 };
+
+/* ---------------------------------------------------------------- formatting */
+const fmtJst = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+const fmtJstHm = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false });
+const fmtJstDay = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tokyo', weekday: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+const fmtDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'short', day: '2-digit' });
+const fmtUtc = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+const num = (n, d = 0) => Number(n).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const compass = (az) => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(az / 45) % 8];
+const pad3 = (n) => String(Math.round(n) % 360).padStart(3, '0');
+const shortName = (a) => a.name.replace(/ (International )?Airport$/, '').replace(/^(JMSDF|JGSDF|JASDF) /, '').replace(/ \/ .*$/, '');
+
+/* ---------------------------------------------------------------- sensors */
+const SENSORS = {
+  normal: { label: 'NORMAL', accent: '#00d4ff', bg: '#07090d', sea: '#08101a', land: '#16232f', coast: 'rgba(130,190,225,0.4)', ring: 'rgba(120,180,220,0.16)', text: '#c9d2da', dim: '#6b7884', rwy: '#e3e7ea', other: '#9fb0bf', mil: '#ffb800', site: '#ff4d5e' },
+  nvg:    { label: 'NVG', accent: '#a6ff8f', bg: '#010501', sea: '#021004', land: '#0c2a0f', coast: 'rgba(150,255,130,0.45)', ring: 'rgba(120,255,110,0.16)', text: '#b9ffa8', dim: '#4f9a48', rwy: '#e8ffd9', other: '#86e675', mil: '#d6ffb8', site: '#e8ffd9' },
+  flir:   { label: 'FLIR', accent: '#ffd23f', bg: '#07000f', sea: '#12002a', land: '#5a1260', coast: 'rgba(255,170,90,0.5)', ring: 'rgba(255,140,80,0.18)', text: '#ffe9b0', dim: '#b07a8a', rwy: '#ffffff', other: '#ffb347', mil: '#ffd23f', site: '#ffffff' },
+  crt:    { label: 'CRT', accent: '#ffb000', bg: '#0a0600', sea: '#120b00', land: '#2e1d00', coast: 'rgba(255,190,60,0.55)', ring: 'rgba(255,176,0,0.18)', text: '#ffd27a', dim: '#9a6a10', rwy: '#fff0c8', other: '#e0a000', mil: '#ffd27a', site: '#fff0c8' },
+};
+let sensor = 'normal';
+try { const s = localStorage.getItem('gev-narita-sensor'); if (SENSORS[s]) sensor = s; } catch {}
+
+/* ---------------------------------------------------------------- map state */
+const SCALES = { runways: 7, approach: 50, kanto: 230 }; // km across the short side
+const view = { cx: 0, cy: 0, span: SCALES.approach, approach: true, rings: true };
+const MAX_SPAN = 300, MIN_SPAN = 2;
+const stage = $('stage'), canvas = $('map'), ctx = canvas.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+function resize() {
+  const r = stage.getBoundingClientRect();
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = r.width; H = r.height;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  dirty = true;
+}
+new ResizeObserver(resize).observe(stage);
+const pxPerKm = () => Math.min(W, H) / view.span;
+function sx(x) { return W / 2 + (x - view.cx) * pxPerKm(); }
+function sy(y) { return H / 2 - (y - view.cy) * pxPerKm(); }
+function project(lat, lon) { const [x, y] = toKm(lat, lon); return [sx(x), sy(y)]; }
+const landKm = D.land.map((ring) => ring.map(([lon, lat]) => toKm(lat, lon)));
+
+/* ---------------------------------------------------------------- wind */
+const wind = { dir: 20, spd: 14, gst: null, example: true };
+try {
+  const w = JSON.parse(localStorage.getItem('gev-narita-wind') || 'null');
+  if (w && Number.isFinite(w.dir) && Number.isFinite(w.spd)) Object.assign(wind, w, { example: false });
+} catch {}
+$('wDir').value = wind.dir; $('wSpd').value = wind.spd; if (wind.gst) $('wGst').value = wind.gst;
+function components(hdg, from, spd) {
+  const a = (from - hdg) * RAD;
+  return { head: spd * Math.cos(a), cross: spd * Math.sin(a) };
+}
+let favEnd = null;
+function renderWind() {
+  const rows = ends.map((e) => {
+    const c = components(e.hdg, wind.dir, wind.spd);
+    const g = wind.gst ? components(e.hdg, wind.dir, wind.gst) : null;
+    return { e, ...c, gx: g ? Math.abs(g.cross) : null };
+  });
+  const best = rows.reduce((a, b) => (b.head > a.head ? b : a));
+  favEnd = wind.spd > 0 ? best.e : null;
+  $('windRows').innerHTML = rows.map((r) => {
+    const side = r.cross >= 0.5 ? 'R' : r.cross <= -0.5 ? 'L' : '';
+    return `<tr class="${r.e === favEnd ? 'fav' : ''}"><td>${r.e.ident} <span style="color:var(--dim)">(${r.e.rw.name})</span></td>`
+      + `<td class="n ${r.head < -0.5 ? 'tail' : ''}">${r.head < -0.5 ? 'tail ' + num(-r.head) : num(r.head)} kt</td>`
+      + `<td class="n">${num(Math.abs(r.cross))} kt ${side}</td>`
+      + `<td class="n">${r.gx == null ? '—' : num(r.gx) + ' kt'}</td></tr>`;
+  }).join('');
+  $('windTag').innerHTML = wind.example ? '<span class="badge">EXAMPLE WIND</span>' : `${pad3(wind.dir)}° / ${wind.spd} kt${wind.gst ? ' G' + wind.gst : ''}`;
+  dirty = true;
+}
+for (const id of ['wDir', 'wSpd', 'wGst']) {
+  $(id).addEventListener('input', () => {
+    const d = Number($('wDir').value), s = Number($('wSpd').value), g = $('wGst').value === '' ? null : Number($('wGst').value);
+    if (!Number.isFinite(d) || !Number.isFinite(s) || d < 0 || d > 360 || s < 0) return;
+    Object.assign(wind, { dir: d % 360, spd: s, gst: Number.isFinite(g) && g > s ? g : null, example: false });
+    try { localStorage.setItem('gev-narita-wind', JSON.stringify({ dir: wind.dir, spd: wind.spd, gst: wind.gst })); } catch {}
+    renderWind();
+  });
+}
+
+/* ---------------------------------------------------------------- drawing */
+let dirty = true, hits = [];
+function line(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+function draw() {
+  const P = SENSORS[sensor], k = pxPerKm();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = P.sea; ctx.fillRect(0, 0, W, H);
+  hits = [];
+
+  // land
+  ctx.beginPath();
+  for (const ring of landKm) {
+    ring.forEach(([x, y], i) => (i ? ctx.lineTo(sx(x), sy(y)) : ctx.moveTo(sx(x), sy(y))));
+    ctx.closePath();
+  }
+  ctx.fillStyle = P.land; ctx.fill('evenodd');
+  ctx.strokeStyle = P.coast; ctx.lineWidth = 0.8; ctx.stroke();
+
+  // range rings around Narita
+  const ox = sx(0), oy = sy(0);
+  if (view.rings) {
+    ctx.font = '10px "JetBrains Mono", monospace'; ctx.lineWidth = 1;
+    for (const r of [1, 2, 5, 10, 25, 50, 100, 150]) {
+      const pr = r * k;
+      if (pr < 26 || pr > Math.hypot(W, H)) continue;
+      ctx.strokeStyle = P.ring; ctx.setLineDash([2, 5]);
+      ctx.beginPath(); ctx.arc(ox, oy, pr, 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = P.dim; ctx.fillText(`${r} km`, ox + pr * 0.707 + 3, oy - pr * 0.707 - 3);
+    }
+  }
+
+  // other airfields
+  ctx.font = '10.5px "JetBrains Mono", monospace';
+  for (const a of others) {
+    const [x, y] = project(a.lat, a.lon);
+    if (x < -60 || y < -60 || x > W + 60 || y > H + 60) continue;
+    const col = a.mil ? P.mil : P.other;
+    ctx.strokeStyle = col; ctx.fillStyle = col;
+    let drewRwy = false;
+    for (const r of a.runways) {
+      const [x1, y1] = project(r.le[0], r.le[1]), [x2, y2] = project(r.he[0], r.he[1]);
+      if (!Number.isFinite(x1) || Math.hypot(x2 - x1, y2 - y1) < 4) continue;
+      ctx.lineWidth = Math.max(1.5, (r.widthFt || 150) * 0.0003048 * k); line(x1, y1, x2, y2); drewRwy = true;
+    }
+    if (!drewRwy) { ctx.beginPath(); ctx.arc(x, y, 3, 0, 2 * Math.PI); ctx.fill(); }
+    if (k * 4 > 3 || a.type === 'large' || a.mil) {
+      ctx.fillText(`${a.iata || a.icao}`, x + 7, y - 6);
+      if (view.span < 120) { ctx.fillStyle = P.dim; ctx.fillText(shortName(a), x + 7, y + 6); }
+    }
+    hits.push({ x, y, ref: a });
+  }
+
+  // approach lines: 10 NM out from each threshold, against the landing direction
+  if (view.approach) {
+    ctx.font = '10px "JetBrains Mono", monospace';
+    for (const e of ends) {
+      const back = (e.hdg + 180) * RAD;
+      const [tx, ty] = toKm(e.at.lat, e.at.lon);
+      const ux = Math.sin(back), uy = Math.cos(back);
+      const fav = e === favEnd;
+      ctx.strokeStyle = fav ? P.accent : P.dim; ctx.lineWidth = fav ? 1.4 : 1;
+      ctx.setLineDash(fav ? [] : [6, 5]);
+      line(sx(tx), sy(ty), sx(tx + ux * 10 * NM), sy(ty + uy * 10 * NM));
+      ctx.setLineDash([]);
+      for (let n = 1; n <= 10; n++) {
+        const px = sx(tx + ux * n * NM), py = sy(ty + uy * n * NM);
+        const len = n % 5 === 0 ? 7 : 3.5;
+        if (n % 5 !== 0 && NM * k < 10) continue;
+        line(px - uy * len, py - ux * len, px + uy * len, py + ux * len);
+        if (n % 5 === 0) { ctx.fillStyle = fav ? P.accent : P.dim; ctx.fillText(`${n} NM ${e.ident}`, px + 8, py + 3); }
+      }
+    }
+  }
+
+  // Narita runways, to scale
+  for (const r of runways) {
+    const [x1, y1] = project(r.le.lat, r.le.lon), [x2, y2] = project(r.he.lat, r.he.lon);
+    const wpx = Math.max(3, r.widthFt * 0.0003048 * k);
+    ctx.strokeStyle = P.rwy; ctx.lineWidth = wpx; ctx.lineCap = 'butt'; line(x1, y1, x2, y2);
+    if (wpx > 8) {
+      ctx.strokeStyle = P.bg; ctx.lineWidth = Math.max(1, wpx * 0.04); ctx.setLineDash([wpx * 0.9, wpx * 0.7]);
+      line(x1, y1, x2, y2); ctx.setLineDash([]);
+    }
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    ctx.font = `${Math.min(14, Math.max(10, wpx * 0.8))}px "Share Tech Mono", monospace`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const [a, b] = r.ident.split('/');
+    const off = 14 + wpx * 0.4;
+    ctx.fillStyle = (favEnd && favEnd.ident === a) ? P.accent : P.text; ctx.fillText(a, x1 - ux * off, y1 - uy * off);
+    ctx.fillStyle = (favEnd && favEnd.ident === b) ? P.accent : P.text; ctx.fillText(b, x2 + ux * off, y2 + uy * off);
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    hits.push({ x: (x1 + x2) / 2, y: (y1 + y2) / 2, ref: { rwy: r } });
+  }
+
+  // site marker and wind arrow
+  ctx.strokeStyle = P.site; ctx.lineWidth = 1.5;
+  if (view.span > 90) { ctx.beginPath(); ctx.arc(ox, oy, 7, 0, 2 * Math.PI); ctx.stroke(); }
+  if (wind.spd > 0) {
+    // Wind dial in the corner: the arrow flies downwind, from the reported direction.
+    const cx = 52, cy = H - 92, rr = 30, from = wind.dir * RAD;
+    ctx.strokeStyle = P.ring; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 2 * Math.PI); ctx.stroke();
+    ctx.fillStyle = P.dim; ctx.font = '9px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+    ctx.fillText('N', cx, cy - rr - 4); ctx.fillText('WIND', cx, cy + rr + 12);
+    const tx = cx + Math.sin(from) * rr, ty = cy - Math.cos(from) * rr;
+    const hx = cx - Math.sin(from) * (rr - 6), hy = cy + Math.cos(from) * (rr - 6);
+    ctx.strokeStyle = P.accent; ctx.fillStyle = P.accent; ctx.lineWidth = 1.6; line(tx, ty, hx, hy);
+    const ang = Math.atan2(hy - ty, hx - tx);
+    ctx.beginPath(); ctx.moveTo(hx, hy);
+    ctx.lineTo(hx - 8 * Math.cos(ang - 0.4), hy - 8 * Math.sin(ang - 0.4));
+    ctx.lineTo(hx - 8 * Math.cos(ang + 0.4), hy - 8 * Math.sin(ang + 0.4)); ctx.closePath(); ctx.fill();
+    ctx.font = '10.5px "JetBrains Mono", monospace';
+    ctx.fillText(`${pad3(wind.dir)}°/${wind.spd}${wind.gst ? 'G' + wind.gst : ''}KT${wind.example ? ' EX' : ''}`, cx, cy + rr + 25);
+    ctx.textAlign = 'start';
+  }
+
+  // north arrow + scale bar
+  ctx.strokeStyle = P.text; ctx.fillStyle = P.text; ctx.lineWidth = 1.2;
+  line(W - 30, 78, W - 30, 54);
+  ctx.beginPath(); ctx.moveTo(W - 30, 50); ctx.lineTo(W - 34, 58); ctx.lineTo(W - 26, 58); ctx.closePath(); ctx.fill();
+  ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.fillText('N', W - 30, 90); ctx.textAlign = 'start';
+  const nice = [0.5, 1, 2, 5, 10, 20, 50, 100].find((v) => v * k > 70) || 100;
+  const bx = 18, by = H - 20;
+  line(bx, by, bx + nice * k, by); line(bx, by - 4, bx, by + 4); line(bx + nice * k, by - 4, bx + nice * k, by + 4);
+  ctx.fillText(`${nice} km`, bx, by - 7);
+
+  $('hudTl').innerHTML = `VIEW <b>${num(view.span)} km</b> across<br>CTR <b>${(NRT.lat + view.cy / KY).toFixed(3)}°N ${(NRT.lon + view.cx / KX).toFixed(3)}°E</b>`;
+  $('hudTr').innerHTML = `SENSOR <b>${P.label}</b><br>RUNWAY IN USE <b>${favEnd ? favEnd.ident : '—'}</b>${wind.example ? ' (example)' : ''}`;
+}
+
+/* ---------------------------------------------------------------- interaction */
+const tip = $('tip'), pointers = new Map();
+let moved = 0, pinch = 0, anim = null;
+const local = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+function nearest(x, y) {
+  let best = null, bd = 14 * 14;
+  for (const h of hits) { const d = (h.x - x) ** 2 + (h.y - y) ** 2; if (d < bd) { bd = d; best = h; } }
+  return best;
+}
+function tipHtml(ref) {
+  if (ref.rwy) {
+    const r = ref.rwy;
+    return `Runway ${r.name} · ${r.ident}<small>${num(r.lengthFt * 0.3048)} m × ${num(r.widthFt * 0.3048)} m · ${r.surface}${r.lit ? ' · lit' : ''}</small>`;
+  }
+  return `${esc(ref.iata ? ref.iata + ' · ' : '')}${esc(ref.name)}<small>${num(ref.dist)} km ${compass(ref.brg)} of Narita · longest ${ref.longestFt ? num(ref.longestFt * 0.3048) + ' m' : '—'}</small>`;
+}
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, local(e)); moved = 0; anim = null;
+  if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); }
+});
+canvas.addEventListener('pointermove', (e) => {
+  const [x, y] = local(e);
+  if (pointers.has(e.pointerId)) {
+    const prev = pointers.get(e.pointerId); pointers.set(e.pointerId, [x, y]);
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      if (pinch) setSpan(view.span * pinch / d); pinch = d; moved += 10; return;
+    }
+    const dx = x - prev[0], dy = y - prev[1]; moved += Math.abs(dx) + Math.abs(dy);
+    if (moved > 4) {
+      canvas.classList.add('dragging'); tip.hidden = true;
+      view.cx -= dx / pxPerKm(); view.cy += dy / pxPerKm(); clampView(); dirty = true;
+    }
+    return;
+  }
+  const h = nearest(x, y);
+  canvas.classList.toggle('pointing', !!h);
+  if (h) { tip.hidden = false; tip.style.left = `${Math.min(x, W - 230)}px`; tip.style.top = `${Math.min(y, H - 50)}px`; tip.innerHTML = tipHtml(h.ref); }
+  else tip.hidden = true;
+});
+function up(e) {
+  const click = pointers.size === 1 && moved <= 4 && e.type === 'pointerup';
+  pointers.delete(e.pointerId); if (pointers.size < 2) pinch = 0;
+  canvas.classList.remove('dragging');
+  if (click) { const [x, y] = local(e); const h = nearest(x, y); if (h && !h.ref.rwy) flyTo(h.ref, Math.min(view.span, 30)); }
+}
+canvas.addEventListener('pointerup', up);
+canvas.addEventListener('pointercancel', up);
+canvas.addEventListener('pointerleave', () => { if (!pointers.size) tip.hidden = true; });
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const [x, y] = local(e), k0 = pxPerKm();
+  const wx = view.cx + (x - W / 2) / k0, wy = view.cy - (y - H / 2) / k0;
+  setSpan(view.span * Math.exp(e.deltaY * 0.0015));
+  const k1 = pxPerKm();
+  view.cx = wx - (x - W / 2) / k1; view.cy = wy + (y - H / 2) / k1; clampView();
+}, { passive: false });
+function setSpan(s) { view.span = Math.max(MIN_SPAN, Math.min(MAX_SPAN, s)); clampView(); dirty = true; markScale(); }
+function clampView() {
+  const lim = 170;
+  view.cx = Math.max(-lim, Math.min(lim, view.cx)); view.cy = Math.max(-lim, Math.min(lim, view.cy));
+}
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function flyTo(target, span) {
+  const [x, y] = target.lat != null ? toKm(target.lat, target.lon) : [0, 0];
+  anim = { x, y, span };
+  if (reduced) { view.cx = x; view.cy = y; setSpan(span); anim = null; }
+}
+function stepAnim() {
+  if (!anim) return;
+  view.cx += (anim.x - view.cx) * 0.15; view.cy += (anim.y - view.cy) * 0.15;
+  view.span *= Math.pow(anim.span / view.span, 0.15);
+  dirty = true; markScale();
+  if (Math.abs(anim.x - view.cx) < 0.01 && Math.abs(anim.y - view.cy) < 0.01 && Math.abs(view.span / anim.span - 1) < 0.005) { view.span = anim.span; anim = null; }
+}
+function markScale() {
+  document.querySelectorAll('[data-scale]').forEach((b) => b.setAttribute('aria-pressed', String(Math.abs(Math.log(view.span / SCALES[b.dataset.scale])) < 0.08)));
+}
+function centre(scale) {
+  const span = SCALES[scale];
+  flyTo({ lat: NRT.lat + (scale === 'kanto' ? -0.25 : 0), lon: NRT.lon + (scale === 'kanto' ? -0.55 : 0) }, span);
+}
+document.querySelectorAll('[data-scale]').forEach((b) => b.addEventListener('click', () => centre(b.dataset.scale)));
+$('tgApp').addEventListener('click', () => { view.approach = !view.approach; $('tgApp').setAttribute('aria-pressed', String(view.approach)); dirty = true; });
+$('tgRings').addEventListener('click', () => { view.rings = !view.rings; $('tgRings').setAttribute('aria-pressed', String(view.rings)); dirty = true; });
+function renderSensors() {
+  $('sensors').innerHTML = Object.entries(SENSORS).map(([k, v], i) => `<button class="btn" data-sensor="${k}" aria-pressed="${k === sensor}">${v.label}<kbd>${i + 1}</kbd></button>`).join('');
+}
+function setSensor(k) {
+  sensor = k; stage.dataset.sensor = k;
+  document.documentElement.style.setProperty('--accent', SENSORS[k].accent);
+  try { localStorage.setItem('gev-narita-sensor', k); } catch {}
+  renderSensors(); dirty = true;
+}
+$('sensors').addEventListener('click', (e) => { const b = e.target.closest('[data-sensor]'); if (b) setSensor(b.dataset.sensor); });
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input')) return;
+  if (/^[1-4]$/.test(e.key)) setSensor(Object.keys(SENSORS)[+e.key - 1]);
+  const m = { r: 'runways', p: 'approach', k: 'kanto' }[e.key.toLowerCase()];
+  if (m) centre(m);
+});
+
+/* ---------------------------------------------------------------- side panels */
+$('dTokyo').textContent = `${num(distKm(NRT, TOKYO_STN))} km`;
+$('dHnd').textContent = HND ? `${num(HND.dist)} km` : '—';
+$('rwyRows').innerHTML = runways.map((r) =>
+  `<tr><td>${r.name} · ${r.ident}</td><td class="n">${num(r.lengthFt * 0.3048)} m</td><td class="n">${num(r.widthFt * 0.3048)} m</td><td class="n">${pad3(r.hdgLe)}° / ${pad3(r.hdgHe)}°</td></tr>`).join('');
+$('afRows').innerHTML = others.map((a, i) =>
+  `<tr data-i="${i}"><td class="name ${a.mil ? 'mil' : ''}" title="${esc(a.name)}">${esc(a.iata || a.icao)} · ${esc(shortName(a))}</td><td class="n">${num(a.dist)}</td><td class="n">${compass(a.brg)}</td><td class="n">${a.longestFt ? num(a.longestFt * 0.3048) : '—'}</td></tr>`).join('');
+$('afRows').addEventListener('click', (e) => { const tr = e.target.closest('tr[data-i]'); if (tr) flyTo(others[+tr.dataset.i], 30); });
+
+/* ---------------------------------------------------------------- sky over Narita */
+const sats = [];
+for (const [name, l1, l2, group] of D.tle) {
+  let rec; try { rec = sat.twoline2satrec(l1, l2); } catch { continue; }
+  if (!rec || rec.error) continue;
+  const norad = l1.slice(2, 7).trim();
+  sats.push({ name, norad, group, rec, epochMs: (rec.jdsatepoch + (rec.jdsatepochF || 0) - 2440587.5) * 864e5 });
+}
+const STATIONS = { '25544': 'ISS', '48274': 'Tiangong' };
+const stations = sats.filter((s) => STATIONS[s.norad]);
+const obs = { longitude: SITE.lon * RAD, latitude: SITE.lat * RAD, height: SITE.hKm };
+function propagate(s, date) {
+  let pv; try { pv = sat.propagate(s.rec, date); } catch { return null; }
+  return pv && pv.position && typeof pv.position === 'object' && !Number.isNaN(pv.position.x) ? pv : null;
+}
+function look(pos, gmst) {
+  const la = sat.ecfToLookAngles(obs, sat.eciToEcf(pos, gmst));
+  return { el: la.elevation * DEG, az: ((la.azimuth * DEG) + 360) % 360, range: la.rangeSat };
+}
+function sunAt(ms) {
+  const d = (ms - 946728000000) / 864e5;
+  const g = (357.529 + 0.98560028 * d) * RAD, q = 280.459 + 0.98564736 * d;
+  const L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * RAD, e = (23.439 - 0.00000036 * d) * RAD;
+  const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L)), dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const lon = ((((ra - sat.gstime(new Date(ms))) * DEG) + 540) % 360) - 180;
+  return { lat: dec * DEG, lon, eci: [Math.cos(dec) * Math.cos(ra), Math.cos(dec) * Math.sin(ra), Math.sin(dec)] };
+}
+function sunEl(sun) {
+  const H = (SITE.lon - sun.lon) * RAD;
+  return Math.asin(Math.sin(SITE.lat * RAD) * Math.sin(sun.lat * RAD) + Math.cos(SITE.lat * RAD) * Math.cos(sun.lat * RAD) * Math.cos(H)) * DEG;
+}
+function sunlit(p, s) {
+  const d = p.x * s[0] + p.y * s[1] + p.z * s[2];
+  if (d > 0) return true;
+  return Math.hypot(p.x - d * s[0], p.y - d * s[1], p.z - d * s[2]) > RE;
+}
+function renderOverhead() {
+  const now = new Date(), gmst = sat.gstime(now);
+  const list = []; let total = 0;
+  for (const s of sats) {
+    const pv = propagate(s, now); if (!pv) continue;
+    const lk = look(pv.position, gmst); if (lk.el < 10) continue;
+    total++; if (s.group !== 'geo') list.push({ s, ...lk });
+  }
+  list.sort((a, b) => b.el - a.el);
+  $('ovhCount').textContent = `${total} above 10°, ${total - list.length} geostationary`;
+  $('ovhRows').innerHTML = list.slice(0, 8).map(({ s, el, az, range }) =>
+    `<tr><td class="name" title="${esc(s.name)}">${esc(STATIONS[s.norad] || s.name)}</td><td class="n">${el.toFixed(0)}°</td><td class="n">${compass(az)} ${az.toFixed(0)}</td><td class="n">${num(range)}</td></tr>`).join('')
+    || '<tr><td colspan="4" class="empty">No moving satellites above 10° right now.</td></tr>';
+}
+function renderPasses() {
+  const t0 = Date.now(), out = [];
+  for (const s of stations) {
+    let cur = null;
+    for (let t = t0; t <= t0 + 48 * 3600e3; t += 20000) {
+      const date = new Date(t), pv = propagate(s, date); if (!pv) break;
+      const lk = look(pv.position, sat.gstime(date));
+      if (lk.el >= 10) {
+        if (!cur) cur = { s, start: t, max: lk.el, visible: false };
+        cur.max = Math.max(cur.max, lk.el);
+        if (!cur.visible) { const sun = sunAt(t); if (sunEl(sun) < -6 && sunlit(pv.position, sun.eci)) cur.visible = true; }
+      } else if (cur) { out.push(cur); cur = null; }
+    }
+    if (cur) out.push(cur);
+  }
+  out.sort((a, b) => a.start - b.start);
+  $('passRows').innerHTML = out.slice(0, 6).map((p) =>
+    `<tr><td>${STATIONS[p.s.norad]}</td><td>${fmtJstDay.format(new Date(p.start))}</td><td class="n">${p.max.toFixed(0)}°</td><td class="${p.visible ? 'vis' : ''}">${p.visible ? 'yes' : 'no'}</td></tr>`).join('')
+    || '<tr><td colspan="4" class="empty">No passes above 10° in the next 48 hours.</td></tr>';
+  const age = Math.min(...stations.map((s) => (Date.now() - s.epochMs) / 864e5));
+  $('passWarn').hidden = age <= 3;
+  $('passWarn').textContent = `Station elements are ${age.toFixed(0)} days old, so these times can be off by many minutes. Confirm with current elements before you go out.`;
+}
+let sunKey = '';
+function renderSun() {
+  const t = Date.now(), e = sunEl(sunAt(t));
+  $('sunEl').textContent = `${e.toFixed(1)}°`;
+  $('sunState').textContent = e > -0.833 ? 'daytime' : e > -6 ? 'civil twilight' : 'night';
+  const mid = Math.floor((t + 9 * 3600e3) / 864e5) * 864e5 - 9 * 3600e3;
+  if (String(mid) === sunKey) return;
+  sunKey = String(mid);
+  let rise = null, set = null, prev = null;
+  for (let m = 0; m <= 1440; m++) {
+    const tm = mid + m * 60000, v = sunEl(sunAt(tm));
+    if (prev !== null) { if (prev < -0.833 && v >= -0.833) rise = tm; if (prev >= -0.833 && v < -0.833) set = tm; }
+    prev = v;
+  }
+  $('sunrise').textContent = rise ? fmtJstHm.format(new Date(rise)) : '—';
+  $('sunset').textContent = set ? fmtJstHm.format(new Date(set)) : '—';
+}
+
+$('foot').innerHTML = `
+  <span>Built from <a href="https://github.com/lh4733684-blip/gods-eye-view" target="_blank" rel="noopener">gods-eye-view</a> @ ${esc(D.meta.commit)} using its bundled offline data. No live flights or weather.</span>
+  <span>Runways and airfields: OurAirports (public domain), ${esc(D.meta.airportsGenerated)}</span>
+  <span>Satellites: CelesTrak elements up to ${fmtDate.format(new Date(Math.max(...sats.map((s) => s.epochMs))))}</span>
+  <span>Coastline: Natural Earth 1:10m</span>
+  <span>Not for navigation.</span>`;
+
+/* ---------------------------------------------------------------- loop */
+function frame() {
+  stepAnim();
+  if (dirty) { dirty = false; draw(); }
+  requestAnimationFrame(frame);
+}
+function tick() { const n = new Date(); $('clkJst').textContent = fmtJst.format(n); $('clkUtc').textContent = fmtUtc.format(n); renderSun(); }
+resize(); setSensor(sensor); renderWind(); markScale();
+tick(); setInterval(tick, 1000);
+renderOverhead(); setInterval(renderOverhead, 5000);
+renderPasses(); setInterval(renderPasses, 15 * 60000);
+requestAnimationFrame(frame);
+})();
+</script>
